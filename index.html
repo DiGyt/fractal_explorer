@@ -692,12 +692,11 @@
       <div class="plot-overlay" id="plotOverlay" aria-hidden="false">
         <button class="pill save-button" id="savePng" type="button">Save as .png</button>
         <div class="watermark">
-          <div class="watermark-name">Dirk Gütlin</div>
           <a
-            href="https://bsky.app/profile/gutlin.bsky.social"
+            href="https://digyt.github.io/fractal_explorer/"
             target="_blank"
             rel="noopener noreferrer"
-          >gutlin.bsky.social</a>
+          >digyt.github.io/fractal_explorer</a>
         </div>
       </div>
 
@@ -2815,18 +2814,7 @@ function drawExportWatermark(
     `${textSize}px system-ui, sans-serif`;
 
   ctx.fillText(
-    "Dirk Gütlin",
-    width - pad,
-    pad
-  );
-
-  ctx.fillStyle =
-    "#9da5b3";
-  ctx.font =
-    `${textSize}px system-ui, sans-serif`;
-
-  ctx.fillText(
-    "gutlin.bsky.social",
+    "digyt.github.io/fractal_explorer",
     width - pad,
     pad + Math.round(13 * scaleY)
   );
