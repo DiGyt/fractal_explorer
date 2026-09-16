@@ -532,6 +532,14 @@
      ============================================================ */
 
   @media (max-width: 760px) {
+    .app {
+      height: 100dvh;
+    }
+
+    #coordsText:empty::before {
+      content: "Re: —  Im: —";
+    }
+
     header {
       padding: 8px 10px 6px;
     }
@@ -3285,7 +3293,7 @@ const canvas =
   );
 
 canvas.addEventListener(
-  "mousemove",
+  "pointermove",
   e => {
     if (!state.lastXSpace) {
       return;
