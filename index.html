@@ -532,6 +532,29 @@
      ============================================================ */
 
   @media (max-width: 760px) {
+    html, body, .app {
+      height: 100dvh;
+      min-height: 100dvh;
+    }
+
+    .shell {
+      min-height: 0;
+      height: auto;
+    }
+
+    .stage {
+      min-height: 0;
+    }
+
+    .status {
+      bottom: max(14px, env(safe-area-inset-bottom));
+      z-index: 4;
+    }
+
+    .progress {
+      z-index: 4;
+    }
+
     header {
       padding: 8px 10px 6px;
     }
@@ -702,7 +725,7 @@
 
       <div class="status">
         <span id="statusText">Ready</span>
-        <span id="coordsText"></span>
+        <span id="coordsText">Re: —  Im: —</span>
       </div>
 
       <div class="progress">
@@ -3325,46 +3348,48 @@ const canvas =
     "canvas"
   );
 
-canvas.addEventListener(
-  "mousemove",
-  e => {
-    if (!state.lastXSpace) {
-      return;
-    }
-
-    const rect =
-      canvas.getBoundingClientRect();
-
-    const u =
-      (e.clientX - rect.left) /
-      rect.width;
-
-    const v =
-      (e.clientY - rect.top) /
-      rect.height;
-
-    const xs =
-      state.lastXSpace;
-
-    const re =
-      xs.xMin +
-      u *
-        (xs.xMax -
-          xs.xMin);
-
-    const im =
-      xs.yMax -
-      v *
-        (xs.yMax -
-          xs.yMin);
-
-    document
-      .getElementById(
-        "coordsText"
-      )
-      .textContent =
-      `Re ${re.toFixed(5)}  Im ${im.toFixed(5)}`;
+const updatePointerCoords = e => {
+  if (!state.lastXSpace) {
+    return;
   }
+
+  const rect =
+    canvas.getBoundingClientRect();
+
+  const u =
+    (e.clientX - rect.left) /
+    rect.width;
+
+  const v =
+    (e.clientY - rect.top) /
+    rect.height;
+
+  const xs =
+    state.lastXSpace;
+
+  const re =
+    xs.xMin +
+    u *
+      (xs.xMax -
+        xs.xMin);
+
+  const im =
+    xs.yMax -
+    v *
+      (xs.yMax -
+        xs.yMin);
+
+  document
+    .getElementById(
+      "coordsText"
+    )
+    .textContent =
+    `Re ${re.toFixed(5)}  Im ${im.toFixed(5)}`;
+};
+
+canvas.addEventListener(
+  "pointermove",
+  updatePointerCoords
 );
 
 updateStageLayout();
