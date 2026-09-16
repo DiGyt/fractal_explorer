@@ -92,50 +92,113 @@
     overflow: visible;
   }
 
+  /* ============================================================
+     Dashboard rows
+     ============================================================ */
+
   .dashboard-row {
     width: 100%;
     min-width: 0;
     display: flex;
     align-items: center;
     gap: 12px;
-    overflow: hidden;
   }
 
-  .dashboard-row:first-child {
+  /*
+    TOP ROW:
+    The whole row is one horizontal scroller.
+
+    Each section keeps its natural width:
+      Family | Examples | Visualization
+
+    Nothing inside the row is allowed to shrink away.
+  */
+  .dashboard-row.top-row {
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
     justify-content: flex-start;
+    scrollbar-width: thin;
+    scrollbar-color: #343948 transparent;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .dashboard-row.top-row::-webkit-scrollbar {
+    height: 5px;
+  }
+
+  .dashboard-row.top-row::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .dashboard-row.top-row::-webkit-scrollbar-thumb {
+    background: #343948;
+    border-radius: 99px;
+  }
+
+  .dashboard-row.top-row > .section {
+    flex: 0 0 auto;
+    min-width: max-content;
+  }
+
+  /*
+    Parameters row keeps the original behavior.
+  */
+  .dashboard-row:not(.top-row) {
+    overflow: visible;
   }
 
   .dashboard-row > .section {
     min-width: 0;
   }
 
-  /* Row 1: Family takes only what it needs; Examples gets the rest. */
+  /* ============================================================
+     Top-row sections
+     ============================================================ */
+
   .family-section {
     flex: 0 0 auto;
     width: max-content;
   }
 
   .examples-section {
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow: hidden;
-  }
-
-  .examples-section .compact-bar {
-    justify-content: center;
-  }
-
-  /* Row 2: Parameters gets the available space; Visualization
-     takes only what it needs. */
-  .parameters-section {
-    flex: 1 1 auto;
-    min-width: 0;
+    flex: 0 0 auto;
+    width: max-content;
+    min-width: max-content;
+    overflow: visible;
   }
 
   .visualization-section {
     flex: 0 0 auto;
     width: max-content;
-    margin-left: auto;
+    margin-left: 0;
+  }
+
+  /*
+    The controls themselves should size to their contents rather
+    than becoming separate horizontal scroll areas.
+  */
+  .family-section .compact-bar,
+  .examples-section .compact-bar {
+    width: max-content;
+  }
+
+  .examples-section .compact-bar {
+    justify-content: flex-start;
+  }
+
+  .visual-controls {
+    width: max-content;
+  }
+
+  /* ============================================================
+     Parameters
+     ============================================================ */
+
+  .parameters-section {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
   }
 
   .section-title {
@@ -151,23 +214,16 @@
   }
 
   .compact-bar {
-    width: 100%;
     min-width: 0;
     min-height: 34px;
     display: flex;
     align-items: center;
     gap: 7px;
-    overflow-x: auto;
+    overflow-x: hidden;
     overflow-y: hidden;
-    scrollbar-width: thin;
-    scrollbar-color: #343948 transparent;
     white-space: nowrap;
     padding-bottom: 1px;
   }
-
-  .compact-bar::-webkit-scrollbar { height: 5px; }
-  .compact-bar::-webkit-scrollbar-track { background: transparent; }
-  .compact-bar::-webkit-scrollbar-thumb { background: #343948; border-radius: 99px; }
 
   button, input, select {
     font: inherit;
@@ -184,7 +240,12 @@
     transition: .16s ease;
     white-space: nowrap;
   }
-  button:hover { transform: translateY(-1px); border-color: #465066; }
+
+  button:hover {
+    transform: translateY(-1px);
+    border-color: #465066;
+  }
+
   button.active {
     background: linear-gradient(135deg, rgba(139,211,255,.16), rgba(199,168,255,.12));
     border-color: #6688a4;
@@ -204,9 +265,18 @@
     white-space: nowrap;
   }
 
-  .parameter-bar::-webkit-scrollbar { height: 5px; }
-  .parameter-bar::-webkit-scrollbar-track { background: transparent; }
-  .parameter-bar::-webkit-scrollbar-thumb { background: #343948; border-radius: 99px; }
+  .parameter-bar::-webkit-scrollbar {
+    height: 5px;
+  }
+
+  .parameter-bar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .parameter-bar::-webkit-scrollbar-thumb {
+    background: #343948;
+    border-radius: 99px;
+  }
 
   .field {
     flex: 0 0 auto;
@@ -240,7 +310,9 @@
     outline: none;
   }
 
-  input:focus, select:focus { border-color: #5d7e99; }
+  input:focus, select:focus {
+    border-color: #5d7e99;
+  }
 
   .expression-field input {
     width: 250px;
@@ -263,8 +335,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: visible;
     white-space: nowrap;
     padding-bottom: 1px;
   }
@@ -290,7 +361,13 @@
     height: 19px;
     flex: 0 0 auto;
   }
-  .switch input { opacity: 0; width: 0; height: 0; }
+
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
   .slider {
     position: absolute;
     inset: 0;
@@ -299,6 +376,7 @@
     cursor: pointer;
     transition: .2s ease;
   }
+
   .slider:before {
     content: "";
     position: absolute;
@@ -310,8 +388,18 @@
     background: #dfe4ec;
     transition: .2s ease;
   }
-  .switch input:checked + .slider { background: #607f99; }
-  .switch input:checked + .slider:before { transform: translateX(15px); }
+
+  .switch input:checked + .slider {
+    background: #607f99;
+  }
+
+  .switch input:checked + .slider:before {
+    transform: translateX(15px);
+  }
+
+  /* ============================================================
+     Stage
+     ============================================================ */
 
   .stage {
     position: relative;
@@ -384,6 +472,7 @@
     height: 2px;
     background: transparent;
   }
+
   .progress > div {
     height: 100%;
     width: 0%;
@@ -391,7 +480,13 @@
     transition: width .05s linear;
   }
 
-  .hidden { display: none !important; }
+  .hidden {
+    display: none !important;
+  }
+
+  /* ============================================================
+     Mobile
+     ============================================================ */
 
   @media (max-width: 760px) {
     header {
@@ -410,31 +505,31 @@
       gap: 4px;
     }
 
-    .dashboard-row {
+    /*
+      Keep the top row as ONE horizontal scroll container.
+      Do not give Family or Examples viewport-based widths.
+    */
+    .dashboard-row.top-row {
       gap: 7px;
     }
 
-    .family-section {
+    .dashboard-row.top-row > .section {
       flex: 0 0 auto;
       width: max-content;
-      max-width: 46vw;
+      min-width: max-content;
+    }
+
+    .family-section {
+      max-width: none;
     }
 
     .examples-section {
-      flex: 1 1 auto;
-      min-width: 0;
+      max-width: none;
+      overflow: visible;
     }
 
     .visualization-section {
-      flex: 0 0 auto;
-      width: max-content;
-      margin-left: auto;
-    }
-
-    .parameters-section {
-      flex: 1 1 auto;
-      min-width: 0;
-      width: 100%;
+      margin-left: 0;
     }
 
     .section-title {
@@ -472,7 +567,6 @@
       max-width: 190px;
     }
   }
-
 </style>
 </head>
 <body>
@@ -486,7 +580,13 @@
   <div class="shell">
     <aside class="sidebar">
       <div class="dashboard">
-        <div class="dashboard-row">
+
+        <!-- ======================================================
+             TOP ROW: ONE HORIZONTAL SCROLLER
+             Family | Examples | Visualization
+             ====================================================== -->
+        <div class="dashboard-row top-row">
+
           <section class="section family-section">
             <h2 class="section-title">Family</h2>
             <div class="family-buttons compact-bar" id="familyButtons">
@@ -511,10 +611,11 @@
                   <span class="slider"></span>
                 </label>
               </div>
+
               <div class="field">
                 <label for="colormap">Color map</label>
                 <select id="colormap">
-		  <option value="magma" selected>magma</option>
+                  <option value="magma" selected>magma</option>
                   <option value="viridis">viridis</option>
                   <option value="plasma">plasma</option>
                   <option value="inferno">inferno</option>
@@ -524,14 +625,19 @@
               </div>
             </div>
           </section>
+
         </div>
 
+        <!-- ======================================================
+             PARAMETERS ROW
+             ====================================================== -->
         <div class="dashboard-row">
           <section class="section parameters-section">
             <h2 class="section-title">Parameters</h2>
             <div id="parameters"></div>
           </section>
         </div>
+
       </div>
     </aside>
 
@@ -539,15 +645,20 @@
       <div class="canvas-wrap">
         <canvas id="canvas"></canvas>
       </div>
+
       <div class="hud">
         <div class="pill" id="familyPill">Mandelbrot-like</div>
         <div class="pill" id="resolutionPill"></div>
       </div>
+
       <div class="status">
         <span id="statusText">Ready</span>
         <span id="coordsText"></span>
       </div>
-      <div class="progress"><div id="progressBar"></div></div>
+
+      <div class="progress">
+        <div id="progressBar"></div>
+      </div>
     </main>
   </div>
 </div>
@@ -599,17 +710,24 @@ function cPow(a, n) {
     let r = complex(1, 0);
     let b = a;
     let k = n;
+
     while (k > 0) {
       if (k & 1) r = cMul(r, b);
       b = cMul(b, b);
       k >>= 1;
     }
+
     return r;
   }
+
   const r = Math.hypot(a.re, a.im);
   const theta = Math.atan2(a.im, a.re);
   const rn = Math.pow(r, n);
-  return complex(rn * Math.cos(n * theta), rn * Math.sin(n * theta));
+
+  return complex(
+    rn * Math.cos(n * theta),
+    rn * Math.sin(n * theta)
+  );
 }
 
 function cConj(a) {
@@ -622,11 +740,18 @@ function cNeg(a) {
 
 function cExp(a) {
   const e = Math.exp(a.re);
-  return { re: e * Math.cos(a.im), im: e * Math.sin(a.im) };
+
+  return {
+    re: e * Math.cos(a.im),
+    im: e * Math.sin(a.im)
+  };
 }
 
 function cLog(a) {
-  return { re: Math.log(cAbs(a)), im: Math.atan2(a.im, a.re) };
+  return {
+    re: Math.log(cAbs(a)),
+    im: Math.atan2(a.im, a.re)
+  };
 }
 
 function cSin(a) {
@@ -653,11 +778,6 @@ function scalarToComplex(x) {
 
 /* ============================================================
    User formula compiler
-   Small complex-expression parser for formulas such as:
-       z**2 + c
-       conj(z)**2 + c
-       z**3 - 2*z + 2
-       3*z**2 - 2
    ============================================================ */
 
 function tokenizeExpression(source) {
@@ -674,36 +794,67 @@ function tokenizeExpression(source) {
 
     if (/[0-9.]/.test(ch)) {
       let j = i + 1;
-      while (j < s.length && /[0-9.]/.test(s[j])) j++;
+
+      while (j < s.length && /[0-9.]/.test(s[j])) {
+        j++;
+      }
+
       if (j < s.length && /[eE]/.test(s[j])) {
         j++;
-        if (/[+-]/.test(s[j] || "")) j++;
-        while (j < s.length && /[0-9]/.test(s[j])) j++;
+
+        if (/[+-]/.test(s[j] || "")) {
+          j++;
+        }
+
+        while (j < s.length && /[0-9]/.test(s[j])) {
+          j++;
+        }
       }
-      tokens.push({ type: "number", value: Number(s.slice(i, j)) });
+
+      tokens.push({
+        type: "number",
+        value: Number(s.slice(i, j))
+      });
+
       i = j;
       continue;
     }
 
     if (/[A-Za-z_]/.test(ch)) {
       let j = i + 1;
-      while (j < s.length && /[A-Za-z0-9_]/.test(s[j])) j++;
-      tokens.push({ type: "identifier", value: s.slice(i, j) });
+
+      while (j < s.length && /[A-Za-z0-9_]/.test(s[j])) {
+        j++;
+      }
+
+      tokens.push({
+        type: "identifier",
+        value: s.slice(i, j)
+      });
+
       i = j;
       continue;
     }
 
     if (s.startsWith("**", i)) {
-      tokens.push({ type: "operator", value: "**" });
+      tokens.push({
+        type: "operator",
+        value: "**"
+      });
+
       i += 2;
       continue;
     }
 
     if ("+-*/(),".includes(ch)) {
       tokens.push({
-        type: ch === "(" || ch === ")" || ch === "," ? "punctuation" : "operator",
+        type:
+          ch === "(" || ch === ")" || ch === ","
+            ? "punctuation"
+            : "operator",
         value: ch
       });
+
       i++;
       continue;
     }
@@ -711,7 +862,11 @@ function tokenizeExpression(source) {
     throw new Error(`Unsupported character in formula: ${ch}`);
   }
 
-  tokens.push({ type: "eof", value: "" });
+  tokens.push({
+    type: "eof",
+    value: ""
+  });
+
   return tokens;
 }
 
@@ -729,6 +884,7 @@ function compileComplexExpression(source, variables) {
     if (!peek(value)) {
       throw new Error(`Expected "${value}" in formula.`);
     }
+
     pos++;
   }
 
@@ -741,7 +897,13 @@ function compileComplexExpression(source, variables) {
 
     while (peek("+") || peek("-")) {
       const op = tokens[pos++].value;
-      node = { type: "binary", op, left: node, right: parseMulDiv() };
+
+      node = {
+        type: "binary",
+        op,
+        left: node,
+        right: parseMulDiv()
+      };
     }
 
     return node;
@@ -752,7 +914,13 @@ function compileComplexExpression(source, variables) {
 
     while (peek("*") || peek("/")) {
       const op = tokens[pos++].value;
-      node = { type: "binary", op, left: node, right: parsePower() };
+
+      node = {
+        type: "binary",
+        op,
+        left: node,
+        right: parsePower()
+      };
     }
 
     return node;
@@ -763,6 +931,7 @@ function compileComplexExpression(source, variables) {
 
     if (peek("**")) {
       pos++;
+
       node = {
         type: "binary",
         op: "**",
@@ -777,12 +946,22 @@ function compileComplexExpression(source, variables) {
   function parseUnary() {
     if (peek("+")) {
       pos++;
-      return { type: "unary", op: "+", value: parseUnary() };
+
+      return {
+        type: "unary",
+        op: "+",
+        value: parseUnary()
+      };
     }
 
     if (peek("-")) {
       pos++;
-      return { type: "unary", op: "-", value: parseUnary() };
+
+      return {
+        type: "unary",
+        op: "-",
+        value: parseUnary()
+      };
     }
 
     return parsePrimary();
@@ -793,7 +972,11 @@ function compileComplexExpression(source, variables) {
 
     if (token.type === "number") {
       pos++;
-      return { type: "number", value: complex(token.value, 0) };
+
+      return {
+        type: "number",
+        value: complex(token.value, 0)
+      };
     }
 
     if (token.type === "identifier") {
@@ -803,8 +986,10 @@ function compileComplexExpression(source, variables) {
         pos++;
 
         const args = [];
+
         if (!peek(")")) {
           args.push(parseExpression());
+
           while (peek(",")) {
             pos++;
             args.push(parseExpression());
@@ -812,6 +997,7 @@ function compileComplexExpression(source, variables) {
         }
 
         consume(")");
+
         return {
           type: "function",
           name: token.value.toLowerCase(),
@@ -820,11 +1006,17 @@ function compileComplexExpression(source, variables) {
       }
 
       if (token.value === "pi") {
-        return { type: "number", value: complex(Math.PI, 0) };
+        return {
+          type: "number",
+          value: complex(Math.PI, 0)
+        };
       }
 
       if (variableSet.has(token.value)) {
-        return { type: "variable", name: token.value };
+        return {
+          type: "variable",
+          name: token.value
+        };
       }
 
       throw new Error(`Unknown identifier "${token.value}".`);
@@ -832,8 +1024,11 @@ function compileComplexExpression(source, variables) {
 
     if (peek("(")) {
       pos++;
+
       const node = parseExpression();
+
       consume(")");
+
       return node;
     }
 
@@ -843,7 +1038,9 @@ function compileComplexExpression(source, variables) {
   const ast = parseExpression();
 
   if (tokens[pos].type !== "eof") {
-    throw new Error(`Unexpected token "${tokens[pos].value}" in formula.`);
+    throw new Error(
+      `Unexpected token "${tokens[pos].value}" in formula.`
+    );
   }
 
   function evaluate(node, env) {
@@ -864,17 +1061,30 @@ function compileComplexExpression(source, variables) {
         const b = evaluate(node.right, env);
 
         switch (node.op) {
-          case "+": return cAdd(a, b);
-          case "-": return cSub(a, b);
-          case "*": return cMul(a, b);
-          case "/": return cDiv(a, b);
+          case "+":
+            return cAdd(a, b);
+
+          case "-":
+            return cSub(a, b);
+
+          case "*":
+            return cMul(a, b);
+
+          case "/":
+            return cDiv(a, b);
+
           case "**": {
-            if (Math.abs(b.im) < 1e-14 && Number.isInteger(b.re)) {
+            if (
+              Math.abs(b.im) < 1e-14 &&
+              Number.isInteger(b.re)
+            ) {
               return cPow(a, b.re);
             }
+
             return cPow(a, b.re);
           }
         }
+
         throw new Error(`Unknown operator "${node.op}".`);
       }
 
@@ -915,7 +1125,9 @@ function compileComplexExpression(source, variables) {
             return cTan(a);
 
           default:
-            throw new Error(`Unknown complex function "${node.name}".`);
+            throw new Error(
+              `Unknown complex function "${node.name}".`
+            );
         }
       }
     }
@@ -925,36 +1137,45 @@ function compileComplexExpression(source, variables) {
 
   const evaluator = env => asComplex(evaluate(ast, env));
 
-  // Return a normal JS function matching the original Python
-  // function signatures.
   if (variables.length === 1) {
-    return z => evaluator({ [variables[0]]: asComplex(z) });
+    return z =>
+      evaluator({
+        [variables[0]]: asComplex(z)
+      });
   }
 
   return (...args) => {
     const env = {};
+
     variables.forEach((name, i) => {
       env[name] = asComplex(args[i]);
     });
+
     return evaluator(env);
   };
 }
 
 function asComplex(value) {
-  if (typeof value === "number") return complex(value, 0);
-  if (value && typeof value.re === "number" && typeof value.im === "number") {
+  if (typeof value === "number") {
+    return complex(value, 0);
+  }
+
+  if (
+    value &&
+    typeof value.re === "number" &&
+    typeof value.im === "number"
+  ) {
     return value;
   }
-  throw new Error("Formula did not return a number or complex value.");
+
+  throw new Error(
+    "Formula did not return a number or complex value."
+  );
 }
 
 /* ============================================================
-   EXACT fractal algorithms translated from the supplied Python
+   Fractal algorithms
    ============================================================ */
-
-// ============================================================
-// Mandelbrot / Julia / Multibrot / Burning Ship / Tricorn ...
-// ============================================================
 
 function fractal_mandelbrot(
   functionFn = (z, c) => cAdd(cMul(z, z), c),
@@ -967,6 +1188,7 @@ function fractal_mandelbrot(
   if (x_space === null) {
     const x = linspace(-2.0, 1.0, resolution);
     const y = linspace(-1.5, 1.5, resolution);
+
     x_space = makeXSpace(x, y);
   }
 
@@ -978,43 +1200,61 @@ function fractal_mandelbrot(
   const iterations = new Int32Array(n);
 
   const z0c = asComplex(z0);
+
   Zre.fill(z0c.re);
   Zim.fill(z0c.im);
 
-  // Fast vector-style kernels for the common preset formulas.
-  // The supplied algorithm remains the same: Z = function(Z, C),
-  // then mark first escape where |Z| > 2.
   const kernel = functionFn._vectorKernel;
 
   if (kernel) {
-    kernel(C, Zre, Zim, iterations, max_iter);
+    kernel(
+      C,
+      Zre,
+      Zim,
+      iterations,
+      max_iter
+    );
   } else {
-    // Generic fallback for user-defined formulas.
     for (let i = 0; i < max_iter; i++) {
       for (let p = 0; p < n; p++) {
         const zn = asComplex(
           functionFn(
-            { re: Zre[p], im: Zim[p] },
-            { re: C.re[p], im: C.im[p] }
+            {
+              re: Zre[p],
+              im: Zim[p]
+            },
+            {
+              re: C.re[p],
+              im: C.im[p]
+            }
           )
         );
 
         Zre[p] = zn.re;
         Zim[p] = zn.im;
 
-        if (Zre[p] * Zre[p] + Zim[p] * Zim[p] > 4 && iterations[p] === 0) {
+        if (
+          Zre[p] * Zre[p] +
+          Zim[p] * Zim[p] > 4 &&
+          iterations[p] === 0
+        ) {
           iterations[p] = i;
         }
       }
     }
   }
 
-  return return_x_space ? { map: iterations, x_space } : iterations;
+  return return_x_space
+    ? {
+        map: iterations,
+        x_space
+      }
+    : iterations;
 }
 
-// ============================================================
-// Newton fractal
-// ============================================================
+/* ============================================================
+   Newton fractal
+   ============================================================ */
 
 function fractal_newton(
   functionFn = z => cSub(cPow(z, 3), complex(1)),
@@ -1028,114 +1268,175 @@ function fractal_newton(
   if (x_space === null) {
     const x = linspace(-2.0, 2.0, resolution);
     const y = linspace(-2.0, 2.0, resolution);
+
     x_space = makeXSpace(x, y);
   }
 
   const n = x_space.re.length;
   const Zre = new Float64Array(x_space.re);
   const Zim = new Float64Array(x_space.im);
+
   const result = new Float64Array(n);
   result.fill(-1.0);
 
   const roots = [
     complex(1, 0),
-    complex(Math.cos(2 * Math.PI / 3), Math.sin(2 * Math.PI / 3)),
-    complex(Math.cos(4 * Math.PI / 3), Math.sin(4 * Math.PI / 3)),
+    complex(
+      Math.cos(2 * Math.PI / 3),
+      Math.sin(2 * Math.PI / 3)
+    ),
+    complex(
+      Math.cos(4 * Math.PI / 3),
+      Math.sin(4 * Math.PI / 3)
+    ),
   ];
 
-  const fastDefault = functionFn._vectorKernel && derivative._vectorKernel;
+  const fastDefault =
+    functionFn._vectorKernel &&
+    derivative._vectorKernel;
 
   if (fastDefault) {
-    // This is the direct typed-array analogue of:
-    //
-    // Za = Z[active]
-    // f = function(Za)
-    // df = derivative(Za)
-    // Za_new[safe] -= f[safe] / df[safe]
-    //
-    // Pixels that converge are removed from the active set.
     const active = new Uint8Array(n);
     active.fill(1);
+
     let activeCount = n;
 
-    for (let i = 0; i < max_iter && activeCount > 0; i++) {
+    for (
+      let i = 0;
+      i < max_iter && activeCount > 0;
+      i++
+    ) {
       for (let p = 0; p < n; p++) {
         if (!active[p]) continue;
 
         const zr = Zre[p];
         const zi = Zim[p];
 
-        const f = functionFn._vectorScalar(zr, zi);
-        const df = derivative._vectorScalar(zr, zi);
+        const f =
+          functionFn._vectorScalar(zr, zi);
 
-        const df2 = df.re * df.re + df.im * df.im;
+        const df =
+          derivative._vectorScalar(zr, zi);
+
+        const df2 =
+          df.re * df.re +
+          df.im * df.im;
+
         const safe = df2 > 1e-28;
 
         if (safe) {
-          const q = (f.re * df.re + f.im * df.im) / df2;
-          const qi = (f.im * df.re - f.re * df.im) / df2;
+          const q =
+            (f.re * df.re + f.im * df.im) /
+            df2;
+
+          const qi =
+            (f.im * df.re - f.re * df.im) /
+            df2;
+
           Zre[p] = zr - q;
           Zim[p] = zi - qi;
         }
 
-        if (safe && Math.hypot(f.re, f.im) < tolerance) {
-          const finalZ = { re: Zre[p], im: Zim[p] };
+        if (
+          safe &&
+          Math.hypot(f.re, f.im) < tolerance
+        ) {
+          const finalZ = {
+            re: Zre[p],
+            im: Zim[p]
+          };
 
           let nearestRoot = 0;
-          let best = cAbs(cSub(finalZ, roots[0]));
+
+          let best =
+            cAbs(cSub(finalZ, roots[0]));
 
           for (let r = 1; r < roots.length; r++) {
-            const d = cAbs(cSub(finalZ, roots[r]));
+            const d =
+              cAbs(cSub(finalZ, roots[r]));
+
             if (d < best) {
               best = d;
               nearestRoot = r;
             }
           }
 
-          result[p] = nearestRoot + i / max_iter;
+          result[p] =
+            nearestRoot + i / max_iter;
+
           active[p] = 0;
           activeCount--;
         }
       }
     }
   } else {
-    // Generic fallback for user-defined functions.
     const active = new Uint8Array(n);
     active.fill(1);
+
     let activeCount = n;
 
-    for (let i = 0; i < max_iter && activeCount > 0; i++) {
+    for (
+      let i = 0;
+      i < max_iter && activeCount > 0;
+      i++
+    ) {
       for (let p = 0; p < n; p++) {
         if (!active[p]) continue;
 
-        const Za = { re: Zre[p], im: Zim[p] };
+        const Za = {
+          re: Zre[p],
+          im: Zim[p]
+        };
+
         const f = asComplex(functionFn(Za));
         const df = asComplex(derivative(Za));
 
-        const df2 = df.re * df.re + df.im * df.im;
+        const df2 =
+          df.re * df.re +
+          df.im * df.im;
+
         const safe = df2 > 1e-28;
 
         if (safe) {
-          const q = (f.re * df.re + f.im * df.im) / df2;
-          const qi = (f.im * df.re - f.re * df.im) / df2;
+          const q =
+            (f.re * df.re + f.im * df.im) /
+            df2;
+
+          const qi =
+            (f.im * df.re - f.re * df.im) /
+            df2;
+
           Zre[p] = Za.re - q;
           Zim[p] = Za.im - qi;
         }
 
-        if (safe && Math.hypot(f.re, f.im) < tolerance) {
-          const finalZ = { re: Zre[p], im: Zim[p] };
+        if (
+          safe &&
+          Math.hypot(f.re, f.im) < tolerance
+        ) {
+          const finalZ = {
+            re: Zre[p],
+            im: Zim[p]
+          };
 
           let nearestRoot = 0;
-          let best = cAbs(cSub(finalZ, roots[0]));
+
+          let best =
+            cAbs(cSub(finalZ, roots[0]));
+
           for (let r = 1; r < roots.length; r++) {
-            const d = cAbs(cSub(finalZ, roots[r]));
+            const d =
+              cAbs(cSub(finalZ, roots[r]));
+
             if (d < best) {
               best = d;
               nearestRoot = r;
             }
           }
 
-          result[p] = nearestRoot + i / max_iter;
+          result[p] =
+            nearestRoot + i / max_iter;
+
           active[p] = 0;
           activeCount--;
         }
@@ -1143,12 +1444,17 @@ function fractal_newton(
     }
   }
 
-  return return_x_space ? { map: result, x_space } : result;
+  return return_x_space
+    ? {
+        map: result,
+        x_space
+      }
+    : result;
 }
 
-// ============================================================
-// Lyapunov fractal
-// ============================================================
+/* ============================================================
+   Lyapunov fractal
+   ============================================================ */
 
 function fractal_lyapunov(
   sequence = "AB",
@@ -1161,6 +1467,7 @@ function fractal_lyapunov(
   if (x_space === null) {
     const a = linspace(2.5, 4.0, resolution);
     const b = linspace(2.5, 4.0, resolution);
+
     x_space = makeXSpace(a, b);
   }
 
@@ -1168,27 +1475,40 @@ function fractal_lyapunov(
   const B = x_space.im;
   const n = A.length;
 
-  // Direct typed-array analogue of the NumPy vectorized arrays:
-  // X = np.full_like(A, 0.5)
-  // lyapunov = np.zeros_like(A)
   const X = new Float64Array(n);
   X.fill(0.5);
 
   const lyapunov = new Float64Array(n);
+
   sequence = sequence.toUpperCase();
 
-  for (let i = 0; i < transient + iterations; i++) {
-    const useA = sequence[i % sequence.length] === "A";
+  for (
+    let i = 0;
+    i < transient + iterations;
+    i++
+  ) {
+    const useA =
+      sequence[i % sequence.length] === "A";
 
-    // Whole-grid arrays are updated without constructing complex
-    // objects for each point.
     for (let p = 0; p < n; p++) {
       const r = useA ? A[p] : B[p];
-      X[p] = r * X[p] * (1 - X[p]);
+
+      X[p] =
+        r *
+        X[p] *
+        (1 - X[p]);
 
       if (i >= transient) {
-        const derivative = Math.abs(r * (1 - 2 * X[p]));
-        lyapunov[p] += Math.log(derivative + 1e-12);
+        const derivative =
+          Math.abs(
+            r *
+            (1 - 2 * X[p])
+          );
+
+        lyapunov[p] +=
+          Math.log(
+            derivative + 1e-12
+          );
       }
     }
   }
@@ -1197,7 +1517,12 @@ function fractal_lyapunov(
     lyapunov[p] /= iterations;
   }
 
-  return return_x_space ? { map: lyapunov, x_space } : lyapunov;
+  return return_x_space
+    ? {
+        map: lyapunov,
+        x_space
+      }
+    : lyapunov;
 }
 
 /* ============================================================
@@ -1205,7 +1530,13 @@ function fractal_lyapunov(
    ============================================================ */
 
 function attachMandelbrotKernel(fn, type) {
-  fn._vectorKernel = function(C, Zre, Zim, iterations, maxIter) {
+  fn._vectorKernel = function(
+    C,
+    Zre,
+    Zim,
+    iterations,
+    maxIter
+  ) {
     const n = C.re.length;
 
     for (let i = 0; i < maxIter; i++) {
@@ -1215,20 +1546,45 @@ function attachMandelbrotKernel(fn, type) {
         const cr = C.re[p];
         const ci = C.im[p];
 
-        let nr, ni;
+        let nr;
+        let ni;
 
         if (type === "z2+c") {
-          nr = zr * zr - zi * zi + cr;
-          ni = 2 * zr * zi + ci;
+          nr =
+            zr * zr -
+            zi * zi +
+            cr;
+
+          ni =
+            2 * zr * zi +
+            ci;
+
         } else if (type === "z4+c") {
-          const ar = zr * zr - zi * zi;
-          const ai = 2 * zr * zi;
-          nr = ar * ar - ai * ai + cr;
-          ni = 2 * ar * ai + ci;
+          const ar =
+            zr * zr -
+            zi * zi;
+
+          const ai =
+            2 * zr * zi;
+
+          nr =
+            ar * ar -
+            ai * ai +
+            cr;
+
+          ni =
+            2 * ar * ai +
+            ci;
+
         } else if (type === "conjz2+c") {
-          // conj(z)^2 + c
-          nr = zr * zr - zi * zi + cr;
-          ni = -2 * zr * zi + ci;
+          nr =
+            zr * zr -
+            zi * zi +
+            cr;
+
+          ni =
+            -2 * zr * zi +
+            ci;
         } else {
           return;
         }
@@ -1236,7 +1592,11 @@ function attachMandelbrotKernel(fn, type) {
         Zre[p] = nr;
         Zim[p] = ni;
 
-        if (nr * nr + ni * ni > 4 && iterations[p] === 0) {
+        if (
+          nr * nr +
+          ni * ni > 4 &&
+          iterations[p] === 0
+        ) {
           iterations[p] = i;
         }
       }
@@ -1246,28 +1606,49 @@ function attachMandelbrotKernel(fn, type) {
   return fn;
 }
 
-function attachNewtonKernel(fn, derivativeFn, type) {
+function attachNewtonKernel(
+  fn,
+  derivativeFn,
+  type
+) {
   if (type === "z3-1") {
     fn._vectorKernel = true;
     derivativeFn._vectorKernel = true;
 
     fn._vectorScalar = (zr, zi) => {
-      // z^3 - 1
-      const z2r = zr * zr - zi * zi;
-      const z2i = 2 * zr * zi;
+      const z2r =
+        zr * zr -
+        zi * zi;
+
+      const z2i =
+        2 * zr * zi;
+
       return {
-        re: z2r * zr - z2i * zi - 1,
-        im: z2r * zi + z2i * zr
+        re:
+          z2r * zr -
+          z2i * zi -
+          1,
+
+        im:
+          z2r * zi +
+          z2i * zr
       };
     };
 
-    derivativeFn._vectorScalar = (zr, zi) => {
-      // 3*z^2
-      return {
-        re: 3 * (zr * zr - zi * zi),
-        im: 6 * zr * zi
+    derivativeFn._vectorScalar =
+      (zr, zi) => {
+        return {
+          re:
+            3 *
+            (zr * zr -
+              zi * zi),
+
+          im:
+            6 *
+            zr *
+            zi
+        };
       };
-    };
   }
 }
 
@@ -1275,21 +1656,45 @@ function attachNewtonKernel(fn, derivativeFn, type) {
    Grid utilities
    ============================================================ */
 
-function linspace(start, stop, count) {
+function linspace(
+  start,
+  stop,
+  count
+) {
   if (count <= 1) return [start];
-  const out = new Float64Array(count);
-  const step = (stop - start) / (count - 1);
-  for (let i = 0; i < count; i++) out[i] = start + i * step;
+
+  const out =
+    new Float64Array(count);
+
+  const step =
+    (stop - start) /
+    (count - 1);
+
+  for (let i = 0; i < count; i++) {
+    out[i] =
+      start +
+      i * step;
+  }
+
   return out;
 }
 
 function makeXSpace(x, y) {
   const cols = x.length;
   const rows = y.length;
-  const re = new Float64Array(rows * cols);
-  const im = new Float64Array(rows * cols);
+
+  const re =
+    new Float64Array(
+      rows * cols
+    );
+
+  const im =
+    new Float64Array(
+      rows * cols
+    );
 
   let p = 0;
+
   for (let iy = 0; iy < rows; iy++) {
     for (let ix = 0; ix < cols; ix++) {
       re[p] = x[ix];
@@ -1299,7 +1704,10 @@ function makeXSpace(x, y) {
   }
 
   return {
-    re, im, rows, cols,
+    re,
+    im,
+    rows,
+    cols,
     xMin: x[0],
     xMax: x[x.length - 1],
     yMin: y[0],
@@ -1354,27 +1762,59 @@ const TURBO_STOPS = [
 ];
 
 function interpolateStops(stops, t) {
-  t = Math.max(0, Math.min(1, t));
+  t = Math.max(
+    0,
+    Math.min(1, t)
+  );
+
   for (let i = 1; i < stops.length; i++) {
     if (t <= stops[i][0]) {
-      const [t0, c0] = stops[i - 1];
-      const [t1, c1] = stops[i];
-      const u = (t - t0) / (t1 - t0);
+      const [t0, c0] =
+        stops[i - 1];
+
+      const [t1, c1] =
+        stops[i];
+
+      const u =
+        (t - t0) /
+        (t1 - t0);
+
       return [
-        Math.round(c0[0] + (c1[0] - c0[0]) * u),
-        Math.round(c0[1] + (c1[1] - c0[1]) * u),
-        Math.round(c0[2] + (c1[2] - c0[2]) * u)
+        Math.round(
+          c0[0] +
+          (c1[0] - c0[0]) * u
+        ),
+        Math.round(
+          c0[1] +
+          (c1[1] - c0[1]) * u
+        ),
+        Math.round(
+          c0[2] +
+          (c1[2] - c0[2]) * u
+        )
       ];
     }
   }
-  return stops[stops.length - 1][1].slice();
+
+  return stops[
+    stops.length - 1
+  ][1].slice();
 }
 
 function colorAt(name, t) {
   if (name === "gray") {
-    const v = Math.round(255 * Math.max(0, Math.min(1, t)));
+    const v =
+      Math.round(
+        255 *
+        Math.max(
+          0,
+          Math.min(1, t)
+        )
+      );
+
     return [v, v, v];
   }
+
   const table = {
     viridis: VIRIDIS_STOPS,
     magma: MAGMA_STOPS,
@@ -1382,7 +1822,11 @@ function colorAt(name, t) {
     inferno: INFERNO_STOPS,
     turbo: TURBO_STOPS
   }[name] || VIRIDIS_STOPS;
-  return interpolateStops(table, t);
+
+  return interpolateStops(
+    table,
+    t
+  );
 }
 
 /* ============================================================
@@ -1395,25 +1839,49 @@ function plot_fractal_map(
   cmap = "magma",
   show_axis = false,
 ) {
-  const canvas = document.getElementById("canvas");
-  const ctx = canvas.getContext("2d", { alpha: false });
+  const canvas =
+    document.getElementById(
+      "canvas"
+    );
 
-  const rows = x_space ? x_space.rows : state.resY;
-  const cols = x_space ? x_space.cols : state.resX;
+  const ctx =
+    canvas.getContext(
+      "2d",
+      { alpha: false }
+    );
+
+  const rows =
+    x_space
+      ? x_space.rows
+      : state.resY;
+
+  const cols =
+    x_space
+      ? x_space.cols
+      : state.resX;
 
   canvas.width = cols;
   canvas.height = rows;
 
-  const image = ctx.createImageData(cols, rows);
-  const data = image.data;
+  const image =
+    ctx.createImageData(
+      cols,
+      rows
+    );
 
-  // Same visualization idea as plt.imshow(..., origin="lower"):
-  // source row 0 is placed at the bottom of the canvas.
+  const data =
+    image.data;
+
   let min = Infinity;
   let max = -Infinity;
 
-  for (let i = 0; i < fractal_map.length; i++) {
-    const v = fractal_map[i];
+  for (
+    let i = 0;
+    i < fractal_map.length;
+    i++
+  ) {
+    const v =
+      fractal_map[i];
 
     if (Number.isFinite(v)) {
       if (v < min) min = v;
@@ -1421,29 +1889,43 @@ function plot_fractal_map(
     }
   }
 
-  if (!Number.isFinite(min) || !Number.isFinite(max) || min === max) {
+  if (
+    !Number.isFinite(min) ||
+    !Number.isFinite(max) ||
+    min === max
+  ) {
     min = 0;
     max = 1;
   }
 
-  // Lyapunov exponents legitimately span negative and positive values.
-  // Keep the COMPLETE range, just like matplotlib's imshow normalization.
   for (let srcY = 0; srcY < rows; srcY++) {
-    const dstY = rows - 1 - srcY;
+    const dstY =
+      rows -
+      1 -
+      srcY;
 
     for (let x = 0; x < cols; x++) {
-      const p = srcY * cols + x;
-      const v = fractal_map[p];
+      const p =
+        srcY * cols +
+        x;
 
-      let t = (v - min) / (max - min);
+      const v =
+        fractal_map[p];
+
+      let t =
+        (v - min) /
+        (max - min);
 
       if (!Number.isFinite(t)) {
         t = 0;
       }
 
-      const [r, g, b] = colorAt(cmap, t);
+      const [r, g, b] =
+        colorAt(cmap, t);
 
-      const q = (dstY * cols + x) * 4;
+      const q =
+        (dstY * cols + x) *
+        4;
 
       data[q] = r;
       data[q + 1] = g;
@@ -1452,86 +1934,230 @@ function plot_fractal_map(
     }
   }
 
-  ctx.putImageData(image, 0, 0);
+  ctx.putImageData(
+    image,
+    0,
+    0
+  );
 
-  if (show_axis && x_space) {
-    drawAxes(ctx, x_space, cols, rows);
+  if (
+    show_axis &&
+    x_space
+  ) {
+    drawAxes(
+      ctx,
+      x_space,
+      cols,
+      rows
+    );
   }
 }
 
-function niceStep(range, targetTicks = 7) {
-  const raw = range / targetTicks;
-  const power = Math.pow(10, Math.floor(Math.log10(raw)));
-  const normalized = raw / power;
+function niceStep(
+  range,
+  targetTicks = 7
+) {
+  const raw =
+    range /
+    targetTicks;
+
+  const power =
+    Math.pow(
+      10,
+      Math.floor(
+        Math.log10(raw)
+      )
+    );
+
+  const normalized =
+    raw / power;
+
   let factor = 1;
-  if (normalized >= 5) factor = 5;
-  else if (normalized >= 2) factor = 2;
+
+  if (normalized >= 5) {
+    factor = 5;
+  } else if (normalized >= 2) {
+    factor = 2;
+  }
+
   return factor * power;
 }
 
-function drawAxes(ctx, x_space, cols, rows) {
+function drawAxes(
+  ctx,
+  x_space,
+  cols,
+  rows
+) {
   const xmin = x_space.xMin;
   const xmax = x_space.xMax;
   const ymin = x_space.yMin;
   const ymax = x_space.yMax;
 
-  const px = x => (x - xmin) / (xmax - xmin) * cols;
-  const py = y => rows - (y - ymin) / (ymax - ymin) * rows;
+  const px =
+    x =>
+      (x - xmin) /
+      (xmax - xmin) *
+      cols;
+
+  const py =
+    y =>
+      rows -
+      (y - ymin) /
+        (ymax - ymin) *
+        rows;
 
   ctx.save();
+
   ctx.lineWidth = 1;
-  ctx.strokeStyle = "rgba(255,255,255,.40)";
-  ctx.fillStyle = "rgba(255,255,255,.72)";
-  ctx.font = "11px system-ui, sans-serif";
+  ctx.strokeStyle =
+    "rgba(255,255,255,.40)";
+  ctx.fillStyle =
+    "rgba(255,255,255,.72)";
+  ctx.font =
+    "11px system-ui, sans-serif";
 
-  if (xmin <= 0 && xmax >= 0) {
+  if (
+    xmin <= 0 &&
+    xmax >= 0
+  ) {
     const x0 = px(0);
+
     ctx.beginPath();
-    ctx.moveTo(x0 + .5, 0);
-    ctx.lineTo(x0 + .5, rows);
+    ctx.moveTo(
+      x0 + .5,
+      0
+    );
+    ctx.lineTo(
+      x0 + .5,
+      rows
+    );
     ctx.stroke();
   }
 
-  if (ymin <= 0 && ymax >= 0) {
+  if (
+    ymin <= 0 &&
+    ymax >= 0
+  ) {
     const y0 = py(0);
+
     ctx.beginPath();
-    ctx.moveTo(0, y0 + .5);
-    ctx.lineTo(cols, y0 + .5);
+    ctx.moveTo(
+      0,
+      y0 + .5
+    );
+    ctx.lineTo(
+      cols,
+      y0 + .5
+    );
     ctx.stroke();
   }
 
-  const xStep = niceStep(xmax - xmin);
-  const yStep = niceStep(ymax - ymin);
+  const xStep =
+    niceStep(
+      xmax - xmin
+    );
 
-  ctx.fillStyle = "rgba(255,255,255,.68)";
+  const yStep =
+    niceStep(
+      ymax - ymin
+    );
 
-  for (let x = Math.ceil(xmin / xStep) * xStep; x <= xmax + xStep * .001; x += xStep) {
+  ctx.fillStyle =
+    "rgba(255,255,255,.68)";
+
+  for (
+    let x =
+      Math.ceil(
+        xmin / xStep
+      ) * xStep;
+    x <=
+      xmax +
+      xStep * .001;
+    x += xStep
+  ) {
     const xx = px(x);
-    if (xx < 0 || xx > cols) continue;
+
+    if (
+      xx < 0 ||
+      xx > cols
+    ) continue;
+
     ctx.beginPath();
-    ctx.moveTo(xx + .5, rows - 8);
-    ctx.lineTo(xx + .5, rows);
+
+    ctx.moveTo(
+      xx + .5,
+      rows - 8
+    );
+
+    ctx.lineTo(
+      xx + .5,
+      rows
+    );
+
     ctx.stroke();
-    ctx.fillText(formatTick(x), xx + 4, rows - 10);
+
+    ctx.fillText(
+      formatTick(x),
+      xx + 4,
+      rows - 10
+    );
   }
 
-  for (let y = Math.ceil(ymin / yStep) * yStep; y <= ymax + yStep * .001; y += yStep) {
+  for (
+    let y =
+      Math.ceil(
+        ymin / yStep
+      ) * yStep;
+    y <=
+      ymax +
+      yStep * .001;
+    y += yStep
+  ) {
     const yy = py(y);
-    if (yy < 0 || yy > rows) continue;
+
+    if (
+      yy < 0 ||
+      yy > rows
+    ) continue;
+
     ctx.beginPath();
-    ctx.moveTo(0, yy + .5);
-    ctx.lineTo(8, yy + .5);
+
+    ctx.moveTo(
+      0,
+      yy + .5
+    );
+
+    ctx.lineTo(
+      8,
+      yy + .5
+    );
+
     ctx.stroke();
-    ctx.fillText(formatTick(y), 10, yy - 4);
+
+    ctx.fillText(
+      formatTick(y),
+      10,
+      yy - 4
+    );
   }
 
   ctx.restore();
 }
 
 function formatTick(x) {
-  if (Math.abs(x) >= 100) return x.toFixed(0);
-  if (Math.abs(x) >= 10) return x.toFixed(1);
-  return x.toFixed(2).replace(/0+$/,"").replace(/\.$/,"");
+  if (Math.abs(x) >= 100) {
+    return x.toFixed(0);
+  }
+
+  if (Math.abs(x) >= 10) {
+    return x.toFixed(1);
+  }
+
+  return x
+    .toFixed(2)
+    .replace(/0+$/, "")
+    .replace(/\.$/, "");
 }
 
 /* ============================================================
@@ -1577,7 +2203,8 @@ const PRESETS = {
     {
       name: "Burning Ship",
       values: {
-        formula: "((conj(z)) ** 2) + c",
+        formula:
+          "((conj(z)) ** 2) + c",
         z: "0",
         x_min: "-2.0",
         x_max: "1.2",
@@ -1589,7 +2216,8 @@ const PRESETS = {
     {
       name: "Tricorn",
       values: {
-        formula: "(conj(z) ** 2) + c",
+        formula:
+          "(conj(z) ** 2) + c",
         z: "0",
         x_min: "-2",
         x_max: "1",
@@ -1601,14 +2229,16 @@ const PRESETS = {
     {
       name: "Julia",
       values: {
-        formula: "z**2 + C(-0.8, 0.156)",
+        formula:
+          "z**2 + C(-0.8, 0.156)",
         z: "0",
         x_min: "-1.7",
         x_max: "1.7",
         y_min: "-1.35",
         y_max: "1.35",
         max_iter: "120",
-        c_fixed: "-0.8 + 0.156i"
+        c_fixed:
+          "-0.8 + 0.156i"
       }
     }
   ],
@@ -1617,8 +2247,10 @@ const PRESETS = {
     {
       name: "z³ − 1",
       values: {
-        function: "z**3 - 1",
-        derivative: "3*z**2",
+        function:
+          "z**3 - 1",
+        derivative:
+          "3*z**2",
         x_min: "-2",
         x_max: "2",
         y_min: "-2",
@@ -1630,8 +2262,10 @@ const PRESETS = {
     {
       name: "z⁴ − 1",
       values: {
-        function: "z**4 - 1",
-        derivative: "4*z**3",
+        function:
+          "z**4 - 1",
+        derivative:
+          "4*z**3",
         x_min: "-2",
         x_max: "2",
         y_min: "-2",
@@ -1643,8 +2277,10 @@ const PRESETS = {
     {
       name: "z³ − 2z + 2",
       values: {
-        function: "z**3 - 2*z + 2",
-        derivative: "3*z**2 - 2",
+        function:
+          "z**3 - 2*z + 2",
+        derivative:
+          "3*z**2 - 2",
         x_min: "-2",
         x_max: "2",
         y_min: "-2",
@@ -1671,7 +2307,8 @@ const PRESETS = {
     {
       name: "AABABBA",
       values: {
-        sequence: "AABABBA",
+        sequence:
+          "AABABBA",
         x_min: "2.5",
         x_max: "4",
         y_min: "2.5",
@@ -1683,7 +2320,8 @@ const PRESETS = {
     {
       name: "ABBAABABA",
       values: {
-        sequence: "ABBAABABA",
+        sequence:
+          "ABBAABABA",
         x_min: "2.5",
         x_max: "4",
         y_min: "2.5",
@@ -1696,87 +2334,229 @@ const PRESETS = {
 };
 
 const DEFAULTS = {
-  mandelbrot: PRESETS.mandelbrot[0].values,
-  newton: PRESETS.newton[0].values,
-  lyapunov: PRESETS.lyapunov[0].values
+  mandelbrot:
+    PRESETS.mandelbrot[0].values,
+
+  newton:
+    PRESETS.newton[0].values,
+
+  lyapunov:
+    PRESETS.lyapunov[0].values
 };
 
 function parameterFields() {
   if (state.family === "mandelbrot") {
     return [
-      { key: "formula", label: "Formula", full: true },
-      { key: "z", label: "z₀" },
-      { key: "max_iter", label: "Max iterations" },
-      { key: "x_min", label: "x min" },
-      { key: "x_max", label: "x max" },
-      { key: "y_min", label: "y min" },
-      { key: "y_max", label: "y max" }
+      {
+        key: "formula",
+        label: "Formula",
+        full: true
+      },
+      {
+        key: "z",
+        label: "z₀"
+      },
+      {
+        key: "max_iter",
+        label: "Max iterations"
+      },
+      {
+        key: "x_min",
+        label: "x min"
+      },
+      {
+        key: "x_max",
+        label: "x max"
+      },
+      {
+        key: "y_min",
+        label: "y min"
+      },
+      {
+        key: "y_max",
+        label: "y max"
+      }
     ];
   }
 
   if (state.family === "newton") {
     return [
-      { key: "function", label: "Function", full: true },
-      { key: "derivative", label: "Derivative", full: true },
-      { key: "max_iter", label: "Max iterations" },
-      { key: "tolerance", label: "Tolerance" },
-      { key: "x_min", label: "x min" },
-      { key: "x_max", label: "x max" },
-      { key: "y_min", label: "y min" },
-      { key: "y_max", label: "y max" }
+      {
+        key: "function",
+        label: "Function",
+        full: true
+      },
+      {
+        key: "derivative",
+        label: "Derivative",
+        full: true
+      },
+      {
+        key: "max_iter",
+        label: "Max iterations"
+      },
+      {
+        key: "tolerance",
+        label: "Tolerance"
+      },
+      {
+        key: "x_min",
+        label: "x min"
+      },
+      {
+        key: "x_max",
+        label: "x max"
+      },
+      {
+        key: "y_min",
+        label: "y min"
+      },
+      {
+        key: "y_max",
+        label: "y max"
+      }
     ];
   }
 
   return [
-    { key: "sequence", label: "Sequence", full: true },
-    { key: "iterations", label: "Iterations" },
-    { key: "transient", label: "Transient" },
-    { key: "x_min", label: "x min" },
-    { key: "x_max", label: "x max" },
-    { key: "y_min", label: "y min" },
-    { key: "y_max", label: "y max" }
+    {
+      key: "sequence",
+      label: "Sequence",
+      full: true
+    },
+    {
+      key: "iterations",
+      label: "Iterations"
+    },
+    {
+      key: "transient",
+      label: "Transient"
+    },
+    {
+      key: "x_min",
+      label: "x min"
+    },
+    {
+      key: "x_max",
+      label: "x max"
+    },
+    {
+      key: "y_min",
+      label: "y min"
+    },
+    {
+      key: "y_max",
+      label: "y max"
+    }
   ];
 }
 
-function renderParameterForm(values = DEFAULTS[state.family]) {
-  const root = document.getElementById("parameters");
-  const grid = document.createElement("div");
-  grid.className = "parameter-bar";
+function renderParameterForm(
+  values = DEFAULTS[state.family]
+) {
+  const root =
+    document.getElementById(
+      "parameters"
+    );
 
-  for (const field of parameterFields()) {
-    const wrap = document.createElement("div");
-    wrap.className = "field" + (field.full ? " expression-field" : " compact-field");
+  const grid =
+    document.createElement(
+      "div"
+    );
 
-    const label = document.createElement("label");
-    label.textContent = field.label;
-    label.htmlFor = "param-" + field.key;
+  grid.className =
+    "parameter-bar";
 
-    const input = document.createElement("input");
-    input.id = "param-" + field.key;
-    input.dataset.key = field.key;
-    input.value = values[field.key] ?? "";
+  for (
+    const field of parameterFields()
+  ) {
+    const wrap =
+      document.createElement(
+        "div"
+      );
+
+    wrap.className =
+      "field" +
+      (
+        field.full
+          ? " expression-field"
+          : " compact-field"
+      );
+
+    const label =
+      document.createElement(
+        "label"
+      );
+
+    label.textContent =
+      field.label;
+
+    label.htmlFor =
+      "param-" +
+      field.key;
+
+    const input =
+      document.createElement(
+        "input"
+      );
+
+    input.id =
+      "param-" +
+      field.key;
+
+    input.dataset.key =
+      field.key;
+
+    input.value =
+      values[field.key] ?? "";
+
     input.spellcheck = false;
     input.autocomplete = "off";
 
-    wrap.append(label, input);
-    grid.appendChild(wrap);
+    wrap.append(
+      label,
+      input
+    );
+
+    grid.appendChild(
+      wrap
+    );
   }
 
   root.replaceChildren(grid);
 
-  root.querySelectorAll("input").forEach(input => {
-    input.addEventListener("change", scheduleParameterRender);
-    input.addEventListener("keydown", e => {
-      if (e.key === "Enter") scheduleParameterRender();
+  root
+    .querySelectorAll("input")
+    .forEach(input => {
+      input.addEventListener(
+        "change",
+        scheduleParameterRender
+      );
+
+      input.addEventListener(
+        "keydown",
+        e => {
+          if (e.key === "Enter") {
+            scheduleParameterRender();
+          }
+        }
+      );
     });
-  });
 }
 
 function readParams() {
   const result = {};
-  document.querySelectorAll("#parameters input").forEach(input => {
-    result[input.dataset.key] = input.value;
-  });
+
+  document
+    .querySelectorAll(
+      "#parameters input"
+    )
+    .forEach(input => {
+      result[
+        input.dataset.key
+      ] = input.value;
+    });
+
   return result;
 }
 
@@ -1785,16 +2565,36 @@ function setParams(values) {
 }
 
 function renderExamples() {
-  const root = document.getElementById("examples");
+  const root =
+    document.getElementById(
+      "examples"
+    );
+
   root.replaceChildren();
 
-  for (const preset of PRESETS[state.family]) {
-    const btn = document.createElement("button");
-    btn.textContent = preset.name;
-    btn.addEventListener("click", () => {
-      setParams(preset.values);
-      scheduleParameterRender();
-    });
+  for (
+    const preset of
+    PRESETS[state.family]
+  ) {
+    const btn =
+      document.createElement(
+        "button"
+      );
+
+    btn.textContent =
+      preset.name;
+
+    btn.addEventListener(
+      "click",
+      () => {
+        setParams(
+          preset.values
+        );
+
+        scheduleParameterRender();
+      }
+    );
+
     root.appendChild(btn);
   }
 }
@@ -1802,11 +2602,21 @@ function renderExamples() {
 function activateFamily(family) {
   state.family = family;
 
-  document.querySelectorAll("#familyButtons button").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.family === family);
-  });
+  document
+    .querySelectorAll(
+      "#familyButtons button"
+    )
+    .forEach(btn => {
+      btn.classList.toggle(
+        "active",
+        btn.dataset.family === family
+      );
+    });
 
-  renderParameterForm(DEFAULTS[family]);
+  renderParameterForm(
+    DEFAULTS[family]
+  );
+
   renderExamples();
   updateFamilyPill();
   scheduleParameterRender();
@@ -1814,22 +2624,48 @@ function activateFamily(family) {
 
 function updateFamilyPill() {
   const labels = {
-    mandelbrot: "Mandelbrot-like",
-    newton: "Newton-like",
-    lyapunov: "Lyapunov-like"
+    mandelbrot:
+      "Mandelbrot-like",
+    newton:
+      "Newton-like",
+    lyapunov:
+      "Lyapunov-like"
   };
-  document.getElementById("familyPill").textContent = labels[state.family];
+
+  document
+    .getElementById(
+      "familyPill"
+    )
+    .textContent =
+    labels[state.family];
 }
 
 function updateStageLayout() {
-  const header = document.querySelector("header");
-  const sidebar = document.querySelector(".sidebar");
-  const stage = document.querySelector(".stage");
+  const header =
+    document.querySelector(
+      "header"
+    );
 
-  // The plot receives exactly the remaining viewport height after the
-  // title bar and the compact two-row UI. The page itself never scrolls.
-  const usedHeight = header.offsetHeight + sidebar.offsetHeight;
-  const availableHeight = Math.max(1, window.innerHeight - usedHeight);
+  const sidebar =
+    document.querySelector(
+      ".sidebar"
+    );
+
+  const stage =
+    document.querySelector(
+      ".stage"
+    );
+
+  const usedHeight =
+    header.offsetHeight +
+    sidebar.offsetHeight;
+
+  const availableHeight =
+    Math.max(
+      1,
+      window.innerHeight -
+      usedHeight
+    );
 
   document.documentElement.style.setProperty(
     "--stage-height",
@@ -1840,16 +2676,56 @@ function updateStageLayout() {
 }
 
 function updateResolution() {
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  const stage = document.querySelector(".stage");
+  const dpr =
+    Math.max(
+      1,
+      window.devicePixelRatio || 1
+    );
 
-  const stageWidth = Math.max(1, stage.clientWidth - 20);
-  const stageHeight = Math.max(1, stage.clientHeight - 20);
+  const stage =
+    document.querySelector(
+      ".stage"
+    );
 
-  state.resX = Math.min(Math.max(1, Math.floor(stageWidth * dpr)), 2000);
-  state.resY = Math.min(Math.max(1, Math.floor(stageHeight * dpr)), 2000);
+  const stageWidth =
+    Math.max(
+      1,
+      stage.clientWidth - 20
+    );
 
-  document.getElementById("resolutionPill").textContent =
+  const stageHeight =
+    Math.max(
+      1,
+      stage.clientHeight - 20
+    );
+
+  state.resX =
+    Math.min(
+      Math.max(
+        1,
+        Math.floor(
+          stageWidth * dpr
+        )
+      ),
+      2000
+    );
+
+  state.resY =
+    Math.min(
+      Math.max(
+        1,
+        Math.floor(
+          stageHeight * dpr
+        )
+      ),
+      2000
+    );
+
+  document
+    .getElementById(
+      "resolutionPill"
+    )
+    .textContent =
     `${state.resX} × ${state.resY}`;
 }
 
@@ -1857,161 +2733,410 @@ function updateResolution() {
    Render pipeline
    ============================================================ */
 
-function toNumber(s, fallback) {
+function toNumber(
+  s,
+  fallback
+) {
   const n = Number(s);
-  return Number.isFinite(n) ? n : fallback;
+
+  return Number.isFinite(n)
+    ? n
+    : fallback;
 }
 
-function parseRealOrComplexLiteral(text) {
-  const s = String(text).trim().replace(/\s+/g, "");
+function parseRealOrComplexLiteral(
+  text
+) {
+  const s =
+    String(text)
+      .trim()
+      .replace(/\s+/g, "");
+
   if (s.endsWith("i")) {
-    const body = s.slice(0, -1);
-    const m = body.match(/^([+-]?(?:\d+(?:\.\d*)?|\.\d+)?)([+-](?:\d+(?:\.\d*)?|\.\d+)?)$/);
+    const body =
+      s.slice(0, -1);
+
+    const m =
+      body.match(
+        /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)?)([+-](?:\d+(?:\.\d*)?|\.\d+)?)$/
+      );
+
     if (m) {
-      return complex(Number(m[1] || 0), Number(m[2]));
+      return complex(
+        Number(m[1] || 0),
+        Number(m[2])
+      );
     }
-    if (body === "" || body === "+") return complex(0, 1);
-    if (body === "-") return complex(0, -1);
-    const imag = Number(body);
-    if (Number.isFinite(imag)) return complex(0, imag);
+
+    if (
+      body === "" ||
+      body === "+"
+    ) {
+      return complex(0, 1);
+    }
+
+    if (body === "-") {
+      return complex(0, -1);
+    }
+
+    const imag =
+      Number(body);
+
+    if (Number.isFinite(imag)) {
+      return complex(0, imag);
+    }
   }
+
   const n = Number(s);
-  if (Number.isFinite(n)) return complex(n, 0);
-  throw new Error(`Invalid complex value: ${text}`);
+
+  if (Number.isFinite(n)) {
+    return complex(n, 0);
+  }
+
+  throw new Error(
+    `Invalid complex value: ${text}`
+  );
 }
 
-function makeMandelbrotFunction(formula) {
-  const fn = compileComplexExpression(formula, ["z", "c"]);
-  const out = (z, c) => asComplex(fn(z, c));
+function makeMandelbrotFunction(
+  formula
+) {
+  const fn =
+    compileComplexExpression(
+      formula,
+      ["z", "c"]
+    );
 
-  const normalized = String(formula)
-    .replace(/\s+/g, "")
-    .replace(/\^/g, "**")
-    .toLowerCase();
+  const out =
+    (z, c) =>
+      asComplex(fn(z, c));
 
-  if (normalized === "z**2+c") {
-    attachMandelbrotKernel(out, "z2+c");
-  } else if (normalized === "z**4+c") {
-    attachMandelbrotKernel(out, "z4+c");
-  } else if (
-    normalized === "conj(z)**2+c" ||
-    normalized === "conj(z)^2+c"
+  const normalized =
+    String(formula)
+      .replace(/\s+/g, "")
+      .replace(/\^/g, "**")
+      .toLowerCase();
+
+  if (
+    normalized ===
+    "z**2+c"
   ) {
-    attachMandelbrotKernel(out, "conjz2+c");
+    attachMandelbrotKernel(
+      out,
+      "z2+c"
+    );
+  } else if (
+    normalized ===
+    "z**4+c"
+  ) {
+    attachMandelbrotKernel(
+      out,
+      "z4+c"
+    );
+  } else if (
+    normalized ===
+      "conj(z)**2+c" ||
+    normalized ===
+      "conj(z)^2+c"
+  ) {
+    attachMandelbrotKernel(
+      out,
+      "conjz2+c"
+    );
   }
 
   return out;
 }
 
-function makeNewtonFunction(formula) {
-  const fn = compileComplexExpression(formula, ["z"]);
-  return z => asComplex(fn(z));
+function makeNewtonFunction(
+  formula
+) {
+  const fn =
+    compileComplexExpression(
+      formula,
+      ["z"]
+    );
+
+  return z =>
+    asComplex(fn(z));
 }
 
 async function renderFractal() {
-  // A parameter render always creates a new map. Visualization changes
-  // deliberately do not come through this function.
-  const myToken = ++state.renderToken;
+  const myToken =
+    ++state.renderToken;
+
   state.rendering = true;
-  const status = document.getElementById("statusText");
-  const bar = document.getElementById("progressBar");
-  status.textContent = "Rendering…";
-  bar.style.width = "3%";
+
+  const status =
+    document.getElementById(
+      "statusText"
+    );
+
+  const bar =
+    document.getElementById(
+      "progressBar"
+    );
+
+  status.textContent =
+    "Rendering…";
+
+  bar.style.width =
+    "3%";
 
   try {
     updateStageLayout();
     updateResolution();
-    const p = readParams();
 
-    const x = linspace(
-      toNumber(p.x_min, -2),
-      toNumber(p.x_max, 2),
-      state.resX
-    );
+    const p =
+      readParams();
 
-    const y = linspace(
-      toNumber(p.y_min, -2),
-      toNumber(p.y_max, 2),
-      state.resY
-    );
+    const x =
+      linspace(
+        toNumber(
+          p.x_min,
+          -2
+        ),
+        toNumber(
+          p.x_max,
+          2
+        ),
+        state.resX
+      );
 
-    const x_space = makeXSpace(x, y);
+    const y =
+      linspace(
+        toNumber(
+          p.y_min,
+          -2
+        ),
+        toNumber(
+          p.y_max,
+          2
+        ),
+        state.resY
+      );
+
+    const x_space =
+      makeXSpace(
+        x,
+        y
+      );
+
     let fractal_map;
 
-    if (state.family === "mandelbrot") {
-      const formula = p.formula || "z**2 + c";
-      const functionFn = makeMandelbrotFunction(formula);
-      const z0 = parseRealOrComplexLiteral(p.z || "0");
-      const max_iter = Math.max(1, Math.floor(toNumber(p.max_iter, 100)));
+    if (
+      state.family ===
+      "mandelbrot"
+    ) {
+      const formula =
+        p.formula ||
+        "z**2 + c";
 
-      fractal_map = fractal_mandelbrot(
-        functionFn,
-        x_space,
-        z0,
-        state.resX,
-        max_iter,
-        false
-      );
-    } else if (state.family === "newton") {
-      const fSource = p.function || "z**3 - 1";
-      const dfSource = p.derivative || "3*z**2";
-      const f = makeNewtonFunction(fSource);
-      const df = makeNewtonFunction(dfSource);
+      const functionFn =
+        makeMandelbrotFunction(
+          formula
+        );
 
-      const fNorm = fSource.replace(/\s+/g, "").replace(/\^/g, "**");
-      const dfNorm = dfSource.replace(/\s+/g, "").replace(/\^/g, "**");
-      if (fNorm === "z**3-1" && dfNorm === "3*z**2") {
-        attachNewtonKernel(f, df, "z3-1");
+      const z0 =
+        parseRealOrComplexLiteral(
+          p.z || "0"
+        );
+
+      const max_iter =
+        Math.max(
+          1,
+          Math.floor(
+            toNumber(
+              p.max_iter,
+              100
+            )
+          )
+        );
+
+      fractal_map =
+        fractal_mandelbrot(
+          functionFn,
+          x_space,
+          z0,
+          state.resX,
+          max_iter,
+          false
+        );
+
+    } else if (
+      state.family ===
+      "newton"
+    ) {
+      const fSource =
+        p.function ||
+        "z**3 - 1";
+
+      const dfSource =
+        p.derivative ||
+        "3*z**2";
+
+      const f =
+        makeNewtonFunction(
+          fSource
+        );
+
+      const df =
+        makeNewtonFunction(
+          dfSource
+        );
+
+      const fNorm =
+        fSource
+          .replace(/\s+/g, "")
+          .replace(/\^/g, "**");
+
+      const dfNorm =
+        dfSource
+          .replace(/\s+/g, "")
+          .replace(/\^/g, "**");
+
+      if (
+        fNorm ===
+          "z**3-1" &&
+        dfNorm ===
+          "3*z**2"
+      ) {
+        attachNewtonKernel(
+          f,
+          df,
+          "z3-1"
+        );
       }
 
-      const max_iter = Math.max(1, Math.floor(toNumber(p.max_iter, 40)));
-      const tolerance = Math.max(0, toNumber(p.tolerance, 1e-8));
+      const max_iter =
+        Math.max(
+          1,
+          Math.floor(
+            toNumber(
+              p.max_iter,
+              40
+            )
+          )
+        );
 
-      fractal_map = fractal_newton(
-        f,
-        x_space,
-        df,
-        state.resX,
-        max_iter,
-        tolerance,
-        false
-      );
+      const tolerance =
+        Math.max(
+          0,
+          toNumber(
+            p.tolerance,
+            1e-8
+          )
+        );
+
+      fractal_map =
+        fractal_newton(
+          f,
+          x_space,
+          df,
+          state.resX,
+          max_iter,
+          tolerance,
+          false
+        );
+
     } else {
-      const sequence = (p.sequence || "AB").toUpperCase().replace(/[^AB]/g, "");
-      const iterations = Math.max(1, Math.floor(toNumber(p.iterations, 800)));
-      const transient = Math.max(0, Math.floor(toNumber(p.transient, 100)));
+      const sequence =
+        (
+          p.sequence ||
+          "AB"
+        )
+          .toUpperCase()
+          .replace(
+            /[^AB]/g,
+            ""
+          );
 
-      fractal_map = fractal_lyapunov(
-        sequence || "AB",
-        x_space,
-        state.resX,
-        iterations,
-        transient,
-        false
-      );
+      const iterations =
+        Math.max(
+          1,
+          Math.floor(
+            toNumber(
+              p.iterations,
+              800
+            )
+          )
+        );
+
+      const transient =
+        Math.max(
+          0,
+          Math.floor(
+            toNumber(
+              p.transient,
+              100
+            )
+          )
+        );
+
+      fractal_map =
+        fractal_lyapunov(
+          sequence || "AB",
+          x_space,
+          state.resX,
+          iterations,
+          transient,
+          false
+        );
     }
 
-    if (myToken !== state.renderToken) return;
+    if (
+      myToken !==
+      state.renderToken
+    ) {
+      return;
+    }
 
-    state.cachedMap = fractal_map;
-    state.cachedXSpace = x_space;
-    state.lastXSpace = x_space;
+    state.cachedMap =
+      fractal_map;
 
-    bar.style.width = "92%";
+    state.cachedXSpace =
+      x_space;
+
+    state.lastXSpace =
+      x_space;
+
+    bar.style.width =
+      "92%";
+
     repaintCachedMap();
 
-    bar.style.width = "100%";
-    status.textContent = `Rendered ${state.resX} × ${state.resY}`;
+    bar.style.width =
+      "100%";
+
+    status.textContent =
+      `Rendered ${state.resX} × ${state.resY}`;
+
   } catch (error) {
     console.error(error);
-    status.textContent = "Error: " + error.message;
-    bar.style.width = "0%";
+
+    status.textContent =
+      "Error: " +
+      error.message;
+
+    bar.style.width =
+      "0%";
+
   } finally {
-    if (myToken === state.renderToken) {
-      state.rendering = false;
+    if (
+      myToken ===
+      state.renderToken
+    ) {
+      state.rendering =
+        false;
+
       setTimeout(() => {
-        if (!state.rendering && myToken === state.renderToken) {
-          bar.style.width = "0%";
+        if (
+          !state.rendering &&
+          myToken ===
+            state.renderToken
+        ) {
+          bar.style.width =
+            "0%";
         }
       }, 400);
     }
@@ -2019,62 +3144,158 @@ async function renderFractal() {
 }
 
 function repaintCachedMap() {
-  if (!state.cachedMap || !state.cachedXSpace) return;
+  if (
+    !state.cachedMap ||
+    !state.cachedXSpace
+  ) {
+    return;
+  }
 
   plot_fractal_map(
     state.cachedMap,
     state.cachedXSpace,
-    document.getElementById("colormap").value,
-    document.getElementById("showAxis").checked
+    document.getElementById(
+      "colormap"
+    ).value,
+    document.getElementById(
+      "showAxis"
+    ).checked
   );
 }
 
 let renderTimer = null;
 
 function scheduleParameterRender() {
-  clearTimeout(renderTimer);
-  renderTimer = setTimeout(renderFractal, 30);
+  clearTimeout(
+    renderTimer
+  );
+
+  renderTimer =
+    setTimeout(
+      renderFractal,
+      30
+    );
 }
 
 /* ============================================================
    Init
    ============================================================ */
 
-document.querySelectorAll("#familyButtons button").forEach(btn => {
-  btn.addEventListener("click", () => activateFamily(btn.dataset.family));
-});
+document
+  .querySelectorAll(
+    "#familyButtons button"
+  )
+  .forEach(btn => {
+    btn.addEventListener(
+      "click",
+      () =>
+        activateFamily(
+          btn.dataset.family
+        )
+    );
+  });
 
-document.getElementById("showAxis").addEventListener("change", repaintCachedMap);
-document.getElementById("colormap").addEventListener("change", repaintCachedMap);
+document
+  .getElementById(
+    "showAxis"
+  )
+  .addEventListener(
+    "change",
+    repaintCachedMap
+  );
 
-window.addEventListener("resize", () => {
-  updateStageLayout();
-  updateResolution();
-  // Never recalculate the fractal on resize.
-});
+document
+  .getElementById(
+    "colormap"
+  )
+  .addEventListener(
+    "change",
+    repaintCachedMap
+  );
 
-const canvas = document.getElementById("canvas");
-canvas.addEventListener("mousemove", e => {
-  if (!state.lastXSpace) return;
-  const rect = canvas.getBoundingClientRect();
-  const u = (e.clientX - rect.left) / rect.width;
-  const v = (e.clientY - rect.top) / rect.height;
-  const xs = state.lastXSpace;
-  const re = xs.xMin + u * (xs.xMax - xs.xMin);
-  const im = xs.yMax - v * (xs.yMax - xs.yMin);
-  document.getElementById("coordsText").textContent =
-    `Re ${re.toFixed(5)}  Im ${im.toFixed(5)}`;
-});
+window.addEventListener(
+  "resize",
+  () => {
+    updateStageLayout();
+    updateResolution();
+
+    // Never recalculate the fractal on resize.
+  }
+);
+
+const canvas =
+  document.getElementById(
+    "canvas"
+  );
+
+canvas.addEventListener(
+  "mousemove",
+  e => {
+    if (!state.lastXSpace) {
+      return;
+    }
+
+    const rect =
+      canvas.getBoundingClientRect();
+
+    const u =
+      (e.clientX - rect.left) /
+      rect.width;
+
+    const v =
+      (e.clientY - rect.top) /
+      rect.height;
+
+    const xs =
+      state.lastXSpace;
+
+    const re =
+      xs.xMin +
+      u *
+        (xs.xMax -
+          xs.xMin);
+
+    const im =
+      xs.yMax -
+      v *
+        (xs.yMax -
+          xs.yMin);
+
+    document
+      .getElementById(
+        "coordsText"
+      )
+      .textContent =
+      `Re ${re.toFixed(5)}  Im ${im.toFixed(5)}`;
+  }
+);
 
 updateStageLayout();
-activateFamily("mandelbrot");
+activateFamily(
+  "mandelbrot"
+);
 
 // Preserve the last x_space for coordinate display by wrapping plot call state.
-const _plot = plot_fractal_map;
-plot_fractal_map = function(fractal_map, x_space = null, cmap = "magma", show_axis = false) {
-  state.lastXSpace = x_space;
-  return _plot(fractal_map, x_space, cmap, show_axis);
-};
+const _plot =
+  plot_fractal_map;
+
+plot_fractal_map =
+  function(
+    fractal_map,
+    x_space = null,
+    cmap = "magma",
+    show_axis = false
+  ) {
+    state.lastXSpace =
+      x_space;
+
+    return _plot(
+      fractal_map,
+      x_space,
+      cmap,
+      show_axis
+    );
+  };
 </script>
 </body>
 </html>
