@@ -1,0 +1,2080 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fractal Explorer</title>
+<style>
+  :root {
+    --bg: #0a0b10;
+    --panel: #11131a;
+    --panel-2: #171a23;
+    --line: #2a2e3a;
+    --text: #f2f4f8;
+    --muted: #9ca4b4;
+    --accent: #8bd3ff;
+    --accent-2: #c7a8ff;
+    --danger: #ff8d8d;
+    --shadow: 0 22px 60px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--text);
+    background:
+      radial-gradient(circle at 15% 0%, rgba(139,211,255,.09), transparent 35%),
+      radial-gradient(circle at 85% 100%, rgba(199,168,255,.08), transparent 30%),
+      var(--bg);
+    font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  .app {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 10px 16px 8px;
+  }
+
+  h1 {
+    font-size: clamp(22px, 2.2vw, 32px);
+    line-height: 1;
+    margin: 0 0 5px;
+    letter-spacing: -.03em;
+  }
+
+  .shell {
+    display: block;
+    width: 100%;
+    min-height: calc(100vh - 78px);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .sidebar {
+    width: 100%;
+    padding: 0 12px 6px;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+  }
+
+  .section {
+    padding: 0;
+    margin: 0;
+    border: 0;
+  }
+
+  .dashboard {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 0 0 2px;
+    overflow: visible;
+  }
+
+  .dashboard-row {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    overflow: hidden;
+  }
+
+  .dashboard-row:first-child {
+    justify-content: flex-start;
+  }
+
+  .dashboard-row > .section {
+    min-width: 0;
+  }
+
+  /* Row 1: Family takes only what it needs; Examples gets the rest. */
+  .family-section {
+    flex: 0 0 auto;
+    width: max-content;
+  }
+
+  .examples-section {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .examples-section .compact-bar {
+    justify-content: center;
+  }
+
+  /* Row 2: Parameters gets the available space; Visualization
+     takes only what it needs. */
+  .parameters-section {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .visualization-section {
+    flex: 0 0 auto;
+    width: max-content;
+    margin-left: auto;
+  }
+
+  .section-title {
+    display: inline-block;
+    margin: 0 8px 0 0;
+    color: #d7dce7;
+    text-transform: uppercase;
+    letter-spacing: .09em;
+    font-size: 10px;
+    font-weight: 700;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .compact-bar {
+    width: 100%;
+    min-width: 0;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #343948 transparent;
+    white-space: nowrap;
+    padding-bottom: 1px;
+  }
+
+  .compact-bar::-webkit-scrollbar { height: 5px; }
+  .compact-bar::-webkit-scrollbar-track { background: transparent; }
+  .compact-bar::-webkit-scrollbar-thumb { background: #343948; border-radius: 99px; }
+
+  button, input, select {
+    font: inherit;
+  }
+
+  button {
+    flex: 0 0 auto;
+    color: var(--text);
+    background: rgba(23,26,35,.92);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 7px 10px;
+    cursor: pointer;
+    transition: .16s ease;
+    white-space: nowrap;
+  }
+  button:hover { transform: translateY(-1px); border-color: #465066; }
+  button.active {
+    background: linear-gradient(135deg, rgba(139,211,255,.16), rgba(199,168,255,.12));
+    border-color: #6688a4;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+  }
+
+  .parameter-bar {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 1px;
+    scrollbar-width: thin;
+    white-space: nowrap;
+  }
+
+  .parameter-bar::-webkit-scrollbar { height: 5px; }
+  .parameter-bar::-webkit-scrollbar-track { background: transparent; }
+  .parameter-bar::-webkit-scrollbar-thumb { background: #343948; border-radius: 99px; }
+
+  .field {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+    width: auto;
+  }
+
+  .field.full {
+    grid-column: auto;
+  }
+
+  label {
+    color: var(--muted);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  input, select {
+    width: 72px;
+    min-width: 72px;
+    max-width: 72px;
+    height: 32px;
+    color: var(--text);
+    background: rgba(12,14,20,.96);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 6px 8px;
+    outline: none;
+  }
+
+  input:focus, select:focus { border-color: #5d7e99; }
+
+  .expression-field input {
+    width: 250px;
+    min-width: 250px;
+    max-width: 250px;
+  }
+
+  .compact-field input {
+    width: 72px;
+    min-width: 72px;
+    max-width: 72px;
+  }
+
+  .help {
+    display: none;
+  }
+
+  .visual-controls {
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    padding-bottom: 1px;
+  }
+
+  .toggle-row {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: rgba(12,14,20,.92);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 4px 7px;
+  }
+
+  .visual-controls .field {
+    flex: 0 0 auto;
+  }
+
+  .switch {
+    position: relative;
+    width: 34px;
+    height: 19px;
+    flex: 0 0 auto;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute;
+    inset: 0;
+    border-radius: 99px;
+    background: #2a2e3a;
+    cursor: pointer;
+    transition: .2s ease;
+  }
+  .slider:before {
+    content: "";
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    left: 3px;
+    top: 3px;
+    border-radius: 50%;
+    background: #dfe4ec;
+    transition: .2s ease;
+  }
+  .switch input:checked + .slider { background: #607f99; }
+  .switch input:checked + .slider:before { transform: translateX(15px); }
+
+  .stage {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    height: var(--stage-height, calc(100vh - 145px));
+    min-height: 380px;
+    background: #000;
+    border-top: 1px solid rgba(255,255,255,.05);
+  }
+
+  .canvas-wrap {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 10px;
+  }
+
+  canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    image-rendering: auto;
+    background: #000;
+    border-radius: 8px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.04), 0 12px 40px rgba(0,0,0,.45);
+  }
+
+  .hud {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    top: 14px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .pill {
+    padding: 6px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(8,10,14,.62);
+    color: #dce2ea;
+    backdrop-filter: blur(8px);
+    font-size: 10px;
+  }
+
+  .status {
+    position: absolute;
+    left: 16px;
+    bottom: 14px;
+    right: 16px;
+    pointer-events: none;
+    display: flex;
+    justify-content: space-between;
+    color: #9da5b3;
+    font-size: 10px;
+  }
+
+  .progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: transparent;
+  }
+  .progress > div {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #8bd3ff, #c7a8ff);
+    transition: width .05s linear;
+  }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 760px) {
+    header {
+      padding: 8px 10px 6px;
+    }
+
+    h1 {
+      font-size: 20px;
+    }
+
+    .sidebar {
+      padding: 0 8px 5px;
+    }
+
+    .dashboard {
+      gap: 4px;
+    }
+
+    .dashboard-row {
+      gap: 7px;
+    }
+
+    .family-section {
+      flex: 0 0 auto;
+      width: max-content;
+      max-width: 46vw;
+    }
+
+    .examples-section {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .visualization-section {
+      flex: 0 0 auto;
+      width: max-content;
+      margin-left: auto;
+    }
+
+    .parameters-section {
+      flex: 1 1 auto;
+      min-width: 0;
+      width: 100%;
+    }
+
+    .section-title {
+      min-width: 70px;
+    }
+
+    .expression-field input {
+      width: 220px;
+      min-width: 220px;
+      max-width: 220px;
+    }
+  }
+
+  @media (max-width: 430px) {
+    h1 {
+      font-size: 19px;
+    }
+
+    button {
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+
+    input, select {
+      height: 29px;
+      min-width: 68px;
+      width: 68px;
+      max-width: 68px;
+      font-size: 12px;
+    }
+
+    .expression-field input {
+      width: 190px;
+      min-width: 190px;
+      max-width: 190px;
+    }
+  }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <h1>Fractal Explorer</h1>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="dashboard">
+        <div class="dashboard-row">
+          <section class="section family-section">
+            <h2 class="section-title">Family</h2>
+            <div class="family-buttons compact-bar" id="familyButtons">
+              <button data-family="mandelbrot">Mandelbrot-like</button>
+              <button data-family="newton">Newton-like</button>
+              <button data-family="lyapunov">Lyapunov-like</button>
+            </div>
+          </section>
+
+          <section class="section examples-section">
+            <h2 class="section-title">Examples</h2>
+            <div class="example-buttons compact-bar" id="examples"></div>
+          </section>
+
+          <section class="section visualization-section">
+            <h2 class="section-title">Visualization</h2>
+            <div class="visual-controls">
+              <div class="toggle-row">
+                <label for="showAxis">Show axis</label>
+                <label class="switch">
+                  <input id="showAxis" type="checkbox">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <div class="field">
+                <label for="colormap">Color map</label>
+                <select id="colormap">
+		  <option value="magma" selected>magma</option>
+                  <option value="viridis">viridis</option>
+                  <option value="plasma">plasma</option>
+                  <option value="inferno">inferno</option>
+                  <option value="turbo">turbo</option>
+                  <option value="gray">gray</option>
+                </select>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="dashboard-row">
+          <section class="section parameters-section">
+            <h2 class="section-title">Parameters</h2>
+            <div id="parameters"></div>
+          </section>
+        </div>
+      </div>
+    </aside>
+
+    <main class="stage">
+      <div class="canvas-wrap">
+        <canvas id="canvas"></canvas>
+      </div>
+      <div class="hud">
+        <div class="pill" id="familyPill">Mandelbrot-like</div>
+        <div class="pill" id="resolutionPill"></div>
+      </div>
+      <div class="status">
+        <span id="statusText">Ready</span>
+        <span id="coordsText"></span>
+      </div>
+      <div class="progress"><div id="progressBar"></div></div>
+    </main>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   Complex arithmetic
+   ============================================================ */
+
+function complex(re, im = 0) {
+  return { re, im };
+}
+
+function cAdd(a, b) {
+  return { re: a.re + b.re, im: a.im + b.im };
+}
+
+function cSub(a, b) {
+  return { re: a.re - b.re, im: a.im - b.im };
+}
+
+function cMul(a, b) {
+  return {
+    re: a.re * b.re - a.im * b.im,
+    im: a.re * b.im + a.im * b.re
+  };
+}
+
+function cDiv(a, b) {
+  const d = b.re * b.re + b.im * b.im;
+  return {
+    re: (a.re * b.re + a.im * b.im) / d,
+    im: (a.im * b.re - a.re * b.im) / d
+  };
+}
+
+function cAbs(a) {
+  return Math.hypot(a.re, a.im);
+}
+
+function cAbs2(a) {
+  return a.re * a.re + a.im * a.im;
+}
+
+function cPow(a, n) {
+  if (Number.isInteger(n) && n >= 0) {
+    let r = complex(1, 0);
+    let b = a;
+    let k = n;
+    while (k > 0) {
+      if (k & 1) r = cMul(r, b);
+      b = cMul(b, b);
+      k >>= 1;
+    }
+    return r;
+  }
+  const r = Math.hypot(a.re, a.im);
+  const theta = Math.atan2(a.im, a.re);
+  const rn = Math.pow(r, n);
+  return complex(rn * Math.cos(n * theta), rn * Math.sin(n * theta));
+}
+
+function cConj(a) {
+  return { re: a.re, im: -a.im };
+}
+
+function cNeg(a) {
+  return { re: -a.re, im: -a.im };
+}
+
+function cExp(a) {
+  const e = Math.exp(a.re);
+  return { re: e * Math.cos(a.im), im: e * Math.sin(a.im) };
+}
+
+function cLog(a) {
+  return { re: Math.log(cAbs(a)), im: Math.atan2(a.im, a.re) };
+}
+
+function cSin(a) {
+  return {
+    re: Math.sin(a.re) * Math.cosh(a.im),
+    im: Math.cos(a.re) * Math.sinh(a.im)
+  };
+}
+
+function cCos(a) {
+  return {
+    re: Math.cos(a.re) * Math.cosh(a.im),
+    im: -Math.sin(a.re) * Math.sinh(a.im)
+  };
+}
+
+function cTan(a) {
+  return cDiv(cSin(a), cCos(a));
+}
+
+function scalarToComplex(x) {
+  return complex(Number(x) || 0, 0);
+}
+
+/* ============================================================
+   User formula compiler
+   Small complex-expression parser for formulas such as:
+       z**2 + c
+       conj(z)**2 + c
+       z**3 - 2*z + 2
+       3*z**2 - 2
+   ============================================================ */
+
+function tokenizeExpression(source) {
+  const s = String(source).trim()
+    .replace(/\s+/g, "")
+    .replace(/π/g, "pi")
+    .replace(/\^/g, "**");
+
+  const tokens = [];
+  let i = 0;
+
+  while (i < s.length) {
+    const ch = s[i];
+
+    if (/[0-9.]/.test(ch)) {
+      let j = i + 1;
+      while (j < s.length && /[0-9.]/.test(s[j])) j++;
+      if (j < s.length && /[eE]/.test(s[j])) {
+        j++;
+        if (/[+-]/.test(s[j] || "")) j++;
+        while (j < s.length && /[0-9]/.test(s[j])) j++;
+      }
+      tokens.push({ type: "number", value: Number(s.slice(i, j)) });
+      i = j;
+      continue;
+    }
+
+    if (/[A-Za-z_]/.test(ch)) {
+      let j = i + 1;
+      while (j < s.length && /[A-Za-z0-9_]/.test(s[j])) j++;
+      tokens.push({ type: "identifier", value: s.slice(i, j) });
+      i = j;
+      continue;
+    }
+
+    if (s.startsWith("**", i)) {
+      tokens.push({ type: "operator", value: "**" });
+      i += 2;
+      continue;
+    }
+
+    if ("+-*/(),".includes(ch)) {
+      tokens.push({
+        type: ch === "(" || ch === ")" || ch === "," ? "punctuation" : "operator",
+        value: ch
+      });
+      i++;
+      continue;
+    }
+
+    throw new Error(`Unsupported character in formula: ${ch}`);
+  }
+
+  tokens.push({ type: "eof", value: "" });
+  return tokens;
+}
+
+function compileComplexExpression(source, variables) {
+  const tokens = tokenizeExpression(source);
+  let pos = 0;
+
+  const variableSet = new Set(variables);
+
+  function peek(value) {
+    return tokens[pos].value === value;
+  }
+
+  function consume(value) {
+    if (!peek(value)) {
+      throw new Error(`Expected "${value}" in formula.`);
+    }
+    pos++;
+  }
+
+  function parseExpression() {
+    return parseAddSub();
+  }
+
+  function parseAddSub() {
+    let node = parseMulDiv();
+
+    while (peek("+") || peek("-")) {
+      const op = tokens[pos++].value;
+      node = { type: "binary", op, left: node, right: parseMulDiv() };
+    }
+
+    return node;
+  }
+
+  function parseMulDiv() {
+    let node = parsePower();
+
+    while (peek("*") || peek("/")) {
+      const op = tokens[pos++].value;
+      node = { type: "binary", op, left: node, right: parsePower() };
+    }
+
+    return node;
+  }
+
+  function parsePower() {
+    let node = parseUnary();
+
+    if (peek("**")) {
+      pos++;
+      node = {
+        type: "binary",
+        op: "**",
+        left: node,
+        right: parsePower()
+      };
+    }
+
+    return node;
+  }
+
+  function parseUnary() {
+    if (peek("+")) {
+      pos++;
+      return { type: "unary", op: "+", value: parseUnary() };
+    }
+
+    if (peek("-")) {
+      pos++;
+      return { type: "unary", op: "-", value: parseUnary() };
+    }
+
+    return parsePrimary();
+  }
+
+  function parsePrimary() {
+    const token = tokens[pos];
+
+    if (token.type === "number") {
+      pos++;
+      return { type: "number", value: complex(token.value, 0) };
+    }
+
+    if (token.type === "identifier") {
+      pos++;
+
+      if (peek("(")) {
+        pos++;
+
+        const args = [];
+        if (!peek(")")) {
+          args.push(parseExpression());
+          while (peek(",")) {
+            pos++;
+            args.push(parseExpression());
+          }
+        }
+
+        consume(")");
+        return {
+          type: "function",
+          name: token.value.toLowerCase(),
+          args
+        };
+      }
+
+      if (token.value === "pi") {
+        return { type: "number", value: complex(Math.PI, 0) };
+      }
+
+      if (variableSet.has(token.value)) {
+        return { type: "variable", name: token.value };
+      }
+
+      throw new Error(`Unknown identifier "${token.value}".`);
+    }
+
+    if (peek("(")) {
+      pos++;
+      const node = parseExpression();
+      consume(")");
+      return node;
+    }
+
+    throw new Error("Unexpected token in formula.");
+  }
+
+  const ast = parseExpression();
+
+  if (tokens[pos].type !== "eof") {
+    throw new Error(`Unexpected token "${tokens[pos].value}" in formula.`);
+  }
+
+  function evaluate(node, env) {
+    switch (node.type) {
+      case "number":
+        return node.value;
+
+      case "variable":
+        return env[node.name];
+
+      case "unary": {
+        const a = evaluate(node.value, env);
+        return node.op === "-" ? cNeg(a) : a;
+      }
+
+      case "binary": {
+        const a = evaluate(node.left, env);
+        const b = evaluate(node.right, env);
+
+        switch (node.op) {
+          case "+": return cAdd(a, b);
+          case "-": return cSub(a, b);
+          case "*": return cMul(a, b);
+          case "/": return cDiv(a, b);
+          case "**": {
+            if (Math.abs(b.im) < 1e-14 && Number.isInteger(b.re)) {
+              return cPow(a, b.re);
+            }
+            return cPow(a, b.re);
+          }
+        }
+        throw new Error(`Unknown operator "${node.op}".`);
+      }
+
+      case "function": {
+        const args = node.args.map(arg => evaluate(arg, env));
+        const a = args[0];
+
+        switch (node.name) {
+          case "conj":
+          case "conjugate":
+            return cConj(a);
+
+          case "neg":
+            return cNeg(a);
+
+          case "abs":
+            return complex(cAbs(a), 0);
+
+          case "real":
+            return complex(a.re, 0);
+
+          case "imag":
+            return complex(a.im, 0);
+
+          case "exp":
+            return cExp(a);
+
+          case "log":
+            return cLog(a);
+
+          case "sin":
+            return cSin(a);
+
+          case "cos":
+            return cCos(a);
+
+          case "tan":
+            return cTan(a);
+
+          default:
+            throw new Error(`Unknown complex function "${node.name}".`);
+        }
+      }
+    }
+
+    throw new Error("Invalid expression.");
+  }
+
+  const evaluator = env => asComplex(evaluate(ast, env));
+
+  // Return a normal JS function matching the original Python
+  // function signatures.
+  if (variables.length === 1) {
+    return z => evaluator({ [variables[0]]: asComplex(z) });
+  }
+
+  return (...args) => {
+    const env = {};
+    variables.forEach((name, i) => {
+      env[name] = asComplex(args[i]);
+    });
+    return evaluator(env);
+  };
+}
+
+function asComplex(value) {
+  if (typeof value === "number") return complex(value, 0);
+  if (value && typeof value.re === "number" && typeof value.im === "number") {
+    return value;
+  }
+  throw new Error("Formula did not return a number or complex value.");
+}
+
+/* ============================================================
+   EXACT fractal algorithms translated from the supplied Python
+   ============================================================ */
+
+// ============================================================
+// Mandelbrot / Julia / Multibrot / Burning Ship / Tricorn ...
+// ============================================================
+
+function fractal_mandelbrot(
+  functionFn = (z, c) => cAdd(cMul(z, z), c),
+  x_space = null,
+  z0 = 0,
+  resolution = 800,
+  max_iter = 100,
+  return_x_space = false,
+) {
+  if (x_space === null) {
+    const x = linspace(-2.0, 1.0, resolution);
+    const y = linspace(-1.5, 1.5, resolution);
+    x_space = makeXSpace(x, y);
+  }
+
+  const C = x_space;
+  const n = C.re.length;
+
+  const Zre = new Float64Array(n);
+  const Zim = new Float64Array(n);
+  const iterations = new Int32Array(n);
+
+  const z0c = asComplex(z0);
+  Zre.fill(z0c.re);
+  Zim.fill(z0c.im);
+
+  // Fast vector-style kernels for the common preset formulas.
+  // The supplied algorithm remains the same: Z = function(Z, C),
+  // then mark first escape where |Z| > 2.
+  const kernel = functionFn._vectorKernel;
+
+  if (kernel) {
+    kernel(C, Zre, Zim, iterations, max_iter);
+  } else {
+    // Generic fallback for user-defined formulas.
+    for (let i = 0; i < max_iter; i++) {
+      for (let p = 0; p < n; p++) {
+        const zn = asComplex(
+          functionFn(
+            { re: Zre[p], im: Zim[p] },
+            { re: C.re[p], im: C.im[p] }
+          )
+        );
+
+        Zre[p] = zn.re;
+        Zim[p] = zn.im;
+
+        if (Zre[p] * Zre[p] + Zim[p] * Zim[p] > 4 && iterations[p] === 0) {
+          iterations[p] = i;
+        }
+      }
+    }
+  }
+
+  return return_x_space ? { map: iterations, x_space } : iterations;
+}
+
+// ============================================================
+// Newton fractal
+// ============================================================
+
+function fractal_newton(
+  functionFn = z => cSub(cPow(z, 3), complex(1)),
+  x_space = null,
+  derivative = z => cMul(complex(3), cPow(z, 2)),
+  resolution = 1000,
+  max_iter = 40,
+  tolerance = 1e-8,
+  return_x_space = false,
+) {
+  if (x_space === null) {
+    const x = linspace(-2.0, 2.0, resolution);
+    const y = linspace(-2.0, 2.0, resolution);
+    x_space = makeXSpace(x, y);
+  }
+
+  const n = x_space.re.length;
+  const Zre = new Float64Array(x_space.re);
+  const Zim = new Float64Array(x_space.im);
+  const result = new Float64Array(n);
+  result.fill(-1.0);
+
+  const roots = [
+    complex(1, 0),
+    complex(Math.cos(2 * Math.PI / 3), Math.sin(2 * Math.PI / 3)),
+    complex(Math.cos(4 * Math.PI / 3), Math.sin(4 * Math.PI / 3)),
+  ];
+
+  const fastDefault = functionFn._vectorKernel && derivative._vectorKernel;
+
+  if (fastDefault) {
+    // This is the direct typed-array analogue of:
+    //
+    // Za = Z[active]
+    // f = function(Za)
+    // df = derivative(Za)
+    // Za_new[safe] -= f[safe] / df[safe]
+    //
+    // Pixels that converge are removed from the active set.
+    const active = new Uint8Array(n);
+    active.fill(1);
+    let activeCount = n;
+
+    for (let i = 0; i < max_iter && activeCount > 0; i++) {
+      for (let p = 0; p < n; p++) {
+        if (!active[p]) continue;
+
+        const zr = Zre[p];
+        const zi = Zim[p];
+
+        const f = functionFn._vectorScalar(zr, zi);
+        const df = derivative._vectorScalar(zr, zi);
+
+        const df2 = df.re * df.re + df.im * df.im;
+        const safe = df2 > 1e-28;
+
+        if (safe) {
+          const q = (f.re * df.re + f.im * df.im) / df2;
+          const qi = (f.im * df.re - f.re * df.im) / df2;
+          Zre[p] = zr - q;
+          Zim[p] = zi - qi;
+        }
+
+        if (safe && Math.hypot(f.re, f.im) < tolerance) {
+          const finalZ = { re: Zre[p], im: Zim[p] };
+
+          let nearestRoot = 0;
+          let best = cAbs(cSub(finalZ, roots[0]));
+
+          for (let r = 1; r < roots.length; r++) {
+            const d = cAbs(cSub(finalZ, roots[r]));
+            if (d < best) {
+              best = d;
+              nearestRoot = r;
+            }
+          }
+
+          result[p] = nearestRoot + i / max_iter;
+          active[p] = 0;
+          activeCount--;
+        }
+      }
+    }
+  } else {
+    // Generic fallback for user-defined functions.
+    const active = new Uint8Array(n);
+    active.fill(1);
+    let activeCount = n;
+
+    for (let i = 0; i < max_iter && activeCount > 0; i++) {
+      for (let p = 0; p < n; p++) {
+        if (!active[p]) continue;
+
+        const Za = { re: Zre[p], im: Zim[p] };
+        const f = asComplex(functionFn(Za));
+        const df = asComplex(derivative(Za));
+
+        const df2 = df.re * df.re + df.im * df.im;
+        const safe = df2 > 1e-28;
+
+        if (safe) {
+          const q = (f.re * df.re + f.im * df.im) / df2;
+          const qi = (f.im * df.re - f.re * df.im) / df2;
+          Zre[p] = Za.re - q;
+          Zim[p] = Za.im - qi;
+        }
+
+        if (safe && Math.hypot(f.re, f.im) < tolerance) {
+          const finalZ = { re: Zre[p], im: Zim[p] };
+
+          let nearestRoot = 0;
+          let best = cAbs(cSub(finalZ, roots[0]));
+          for (let r = 1; r < roots.length; r++) {
+            const d = cAbs(cSub(finalZ, roots[r]));
+            if (d < best) {
+              best = d;
+              nearestRoot = r;
+            }
+          }
+
+          result[p] = nearestRoot + i / max_iter;
+          active[p] = 0;
+          activeCount--;
+        }
+      }
+    }
+  }
+
+  return return_x_space ? { map: result, x_space } : result;
+}
+
+// ============================================================
+// Lyapunov fractal
+// ============================================================
+
+function fractal_lyapunov(
+  sequence = "AB",
+  x_space = null,
+  resolution = 1000,
+  iterations = 800,
+  transient = 100,
+  return_x_space = false,
+) {
+  if (x_space === null) {
+    const a = linspace(2.5, 4.0, resolution);
+    const b = linspace(2.5, 4.0, resolution);
+    x_space = makeXSpace(a, b);
+  }
+
+  const A = x_space.re;
+  const B = x_space.im;
+  const n = A.length;
+
+  // Direct typed-array analogue of the NumPy vectorized arrays:
+  // X = np.full_like(A, 0.5)
+  // lyapunov = np.zeros_like(A)
+  const X = new Float64Array(n);
+  X.fill(0.5);
+
+  const lyapunov = new Float64Array(n);
+  sequence = sequence.toUpperCase();
+
+  for (let i = 0; i < transient + iterations; i++) {
+    const useA = sequence[i % sequence.length] === "A";
+
+    // Whole-grid arrays are updated without constructing complex
+    // objects for each point.
+    for (let p = 0; p < n; p++) {
+      const r = useA ? A[p] : B[p];
+      X[p] = r * X[p] * (1 - X[p]);
+
+      if (i >= transient) {
+        const derivative = Math.abs(r * (1 - 2 * X[p]));
+        lyapunov[p] += Math.log(derivative + 1e-12);
+      }
+    }
+  }
+
+  for (let p = 0; p < n; p++) {
+    lyapunov[p] /= iterations;
+  }
+
+  return return_x_space ? { map: lyapunov, x_space } : lyapunov;
+}
+
+/* ============================================================
+   Fast vector kernels
+   ============================================================ */
+
+function attachMandelbrotKernel(fn, type) {
+  fn._vectorKernel = function(C, Zre, Zim, iterations, maxIter) {
+    const n = C.re.length;
+
+    for (let i = 0; i < maxIter; i++) {
+      for (let p = 0; p < n; p++) {
+        const zr = Zre[p];
+        const zi = Zim[p];
+        const cr = C.re[p];
+        const ci = C.im[p];
+
+        let nr, ni;
+
+        if (type === "z2+c") {
+          nr = zr * zr - zi * zi + cr;
+          ni = 2 * zr * zi + ci;
+        } else if (type === "z4+c") {
+          const ar = zr * zr - zi * zi;
+          const ai = 2 * zr * zi;
+          nr = ar * ar - ai * ai + cr;
+          ni = 2 * ar * ai + ci;
+        } else if (type === "conjz2+c") {
+          // conj(z)^2 + c
+          nr = zr * zr - zi * zi + cr;
+          ni = -2 * zr * zi + ci;
+        } else {
+          return;
+        }
+
+        Zre[p] = nr;
+        Zim[p] = ni;
+
+        if (nr * nr + ni * ni > 4 && iterations[p] === 0) {
+          iterations[p] = i;
+        }
+      }
+    }
+  };
+
+  return fn;
+}
+
+function attachNewtonKernel(fn, derivativeFn, type) {
+  if (type === "z3-1") {
+    fn._vectorKernel = true;
+    derivativeFn._vectorKernel = true;
+
+    fn._vectorScalar = (zr, zi) => {
+      // z^3 - 1
+      const z2r = zr * zr - zi * zi;
+      const z2i = 2 * zr * zi;
+      return {
+        re: z2r * zr - z2i * zi - 1,
+        im: z2r * zi + z2i * zr
+      };
+    };
+
+    derivativeFn._vectorScalar = (zr, zi) => {
+      // 3*z^2
+      return {
+        re: 3 * (zr * zr - zi * zi),
+        im: 6 * zr * zi
+      };
+    };
+  }
+}
+
+/* ============================================================
+   Grid utilities
+   ============================================================ */
+
+function linspace(start, stop, count) {
+  if (count <= 1) return [start];
+  const out = new Float64Array(count);
+  const step = (stop - start) / (count - 1);
+  for (let i = 0; i < count; i++) out[i] = start + i * step;
+  return out;
+}
+
+function makeXSpace(x, y) {
+  const cols = x.length;
+  const rows = y.length;
+  const re = new Float64Array(rows * cols);
+  const im = new Float64Array(rows * cols);
+
+  let p = 0;
+  for (let iy = 0; iy < rows; iy++) {
+    for (let ix = 0; ix < cols; ix++) {
+      re[p] = x[ix];
+      im[p] = y[iy];
+      p++;
+    }
+  }
+
+  return {
+    re, im, rows, cols,
+    xMin: x[0],
+    xMax: x[x.length - 1],
+    yMin: y[0],
+    yMax: y[y.length - 1]
+  };
+}
+
+/* ============================================================
+   Colormaps
+   ============================================================ */
+
+const VIRIDIS_STOPS = [
+  [0.00, [68, 1, 84]],
+  [0.25, [59, 82, 139]],
+  [0.50, [33, 145, 140]],
+  [0.75, [94, 201, 98]],
+  [1.00, [253, 231, 37]],
+];
+
+const MAGMA_STOPS = [
+  [0.00, [0, 0, 4]],
+  [0.25, [81, 18, 124]],
+  [0.50, [182, 54, 121]],
+  [0.75, [251, 140, 60]],
+  [1.00, [252, 253, 191]],
+];
+
+const PLASMA_STOPS = [
+  [0.00, [13, 8, 135]],
+  [0.25, [126, 3, 168]],
+  [0.50, [203, 71, 119]],
+  [0.75, [248, 149, 64]],
+  [1.00, [240, 249, 33]],
+];
+
+const INFERNO_STOPS = [
+  [0.00, [0, 0, 4]],
+  [0.25, [87, 15, 109]],
+  [0.50, [188, 55, 84]],
+  [0.75, [249, 142, 8]],
+  [1.00, [252, 255, 164]],
+];
+
+const TURBO_STOPS = [
+  [0.00, [48, 18, 59]],
+  [0.16, [50, 118, 228]],
+  [0.33, [40, 191, 221]],
+  [0.50, [127, 233, 81]],
+  [0.67, [235, 215, 45]],
+  [0.84, [238, 95, 31]],
+  [1.00, [122, 4, 3]],
+];
+
+function interpolateStops(stops, t) {
+  t = Math.max(0, Math.min(1, t));
+  for (let i = 1; i < stops.length; i++) {
+    if (t <= stops[i][0]) {
+      const [t0, c0] = stops[i - 1];
+      const [t1, c1] = stops[i];
+      const u = (t - t0) / (t1 - t0);
+      return [
+        Math.round(c0[0] + (c1[0] - c0[0]) * u),
+        Math.round(c0[1] + (c1[1] - c0[1]) * u),
+        Math.round(c0[2] + (c1[2] - c0[2]) * u)
+      ];
+    }
+  }
+  return stops[stops.length - 1][1].slice();
+}
+
+function colorAt(name, t) {
+  if (name === "gray") {
+    const v = Math.round(255 * Math.max(0, Math.min(1, t)));
+    return [v, v, v];
+  }
+  const table = {
+    viridis: VIRIDIS_STOPS,
+    magma: MAGMA_STOPS,
+    plasma: PLASMA_STOPS,
+    inferno: INFERNO_STOPS,
+    turbo: TURBO_STOPS
+  }[name] || VIRIDIS_STOPS;
+  return interpolateStops(table, t);
+}
+
+/* ============================================================
+   Universal renderer
+   ============================================================ */
+
+function plot_fractal_map(
+  fractal_map,
+  x_space = null,
+  cmap = "magma",
+  show_axis = false,
+) {
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d", { alpha: false });
+
+  const rows = x_space ? x_space.rows : state.resY;
+  const cols = x_space ? x_space.cols : state.resX;
+
+  canvas.width = cols;
+  canvas.height = rows;
+
+  const image = ctx.createImageData(cols, rows);
+  const data = image.data;
+
+  // Same visualization idea as plt.imshow(..., origin="lower"):
+  // source row 0 is placed at the bottom of the canvas.
+  let min = Infinity;
+  let max = -Infinity;
+
+  for (let i = 0; i < fractal_map.length; i++) {
+    const v = fractal_map[i];
+
+    if (Number.isFinite(v)) {
+      if (v < min) min = v;
+      if (v > max) max = v;
+    }
+  }
+
+  if (!Number.isFinite(min) || !Number.isFinite(max) || min === max) {
+    min = 0;
+    max = 1;
+  }
+
+  // Lyapunov exponents legitimately span negative and positive values.
+  // Keep the COMPLETE range, just like matplotlib's imshow normalization.
+  for (let srcY = 0; srcY < rows; srcY++) {
+    const dstY = rows - 1 - srcY;
+
+    for (let x = 0; x < cols; x++) {
+      const p = srcY * cols + x;
+      const v = fractal_map[p];
+
+      let t = (v - min) / (max - min);
+
+      if (!Number.isFinite(t)) {
+        t = 0;
+      }
+
+      const [r, g, b] = colorAt(cmap, t);
+
+      const q = (dstY * cols + x) * 4;
+
+      data[q] = r;
+      data[q + 1] = g;
+      data[q + 2] = b;
+      data[q + 3] = 255;
+    }
+  }
+
+  ctx.putImageData(image, 0, 0);
+
+  if (show_axis && x_space) {
+    drawAxes(ctx, x_space, cols, rows);
+  }
+}
+
+function niceStep(range, targetTicks = 7) {
+  const raw = range / targetTicks;
+  const power = Math.pow(10, Math.floor(Math.log10(raw)));
+  const normalized = raw / power;
+  let factor = 1;
+  if (normalized >= 5) factor = 5;
+  else if (normalized >= 2) factor = 2;
+  return factor * power;
+}
+
+function drawAxes(ctx, x_space, cols, rows) {
+  const xmin = x_space.xMin;
+  const xmax = x_space.xMax;
+  const ymin = x_space.yMin;
+  const ymax = x_space.yMax;
+
+  const px = x => (x - xmin) / (xmax - xmin) * cols;
+  const py = y => rows - (y - ymin) / (ymax - ymin) * rows;
+
+  ctx.save();
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "rgba(255,255,255,.40)";
+  ctx.fillStyle = "rgba(255,255,255,.72)";
+  ctx.font = "11px system-ui, sans-serif";
+
+  if (xmin <= 0 && xmax >= 0) {
+    const x0 = px(0);
+    ctx.beginPath();
+    ctx.moveTo(x0 + .5, 0);
+    ctx.lineTo(x0 + .5, rows);
+    ctx.stroke();
+  }
+
+  if (ymin <= 0 && ymax >= 0) {
+    const y0 = py(0);
+    ctx.beginPath();
+    ctx.moveTo(0, y0 + .5);
+    ctx.lineTo(cols, y0 + .5);
+    ctx.stroke();
+  }
+
+  const xStep = niceStep(xmax - xmin);
+  const yStep = niceStep(ymax - ymin);
+
+  ctx.fillStyle = "rgba(255,255,255,.68)";
+
+  for (let x = Math.ceil(xmin / xStep) * xStep; x <= xmax + xStep * .001; x += xStep) {
+    const xx = px(x);
+    if (xx < 0 || xx > cols) continue;
+    ctx.beginPath();
+    ctx.moveTo(xx + .5, rows - 8);
+    ctx.lineTo(xx + .5, rows);
+    ctx.stroke();
+    ctx.fillText(formatTick(x), xx + 4, rows - 10);
+  }
+
+  for (let y = Math.ceil(ymin / yStep) * yStep; y <= ymax + yStep * .001; y += yStep) {
+    const yy = py(y);
+    if (yy < 0 || yy > rows) continue;
+    ctx.beginPath();
+    ctx.moveTo(0, yy + .5);
+    ctx.lineTo(8, yy + .5);
+    ctx.stroke();
+    ctx.fillText(formatTick(y), 10, yy - 4);
+  }
+
+  ctx.restore();
+}
+
+function formatTick(x) {
+  if (Math.abs(x) >= 100) return x.toFixed(0);
+  if (Math.abs(x) >= 10) return x.toFixed(1);
+  return x.toFixed(2).replace(/0+$/,"").replace(/\.$/,"");
+}
+
+/* ============================================================
+   UI state / presets
+   ============================================================ */
+
+const state = {
+  family: "mandelbrot",
+  resX: 1000,
+  resY: 1000,
+  rendering: false,
+  renderToken: 0,
+  cachedMap: null,
+  cachedXSpace: null,
+};
+
+const PRESETS = {
+  mandelbrot: [
+    {
+      name: "Mandelbrot",
+      values: {
+        formula: "z**2 + c",
+        z: "0",
+        x_min: "-2",
+        x_max: "1",
+        y_min: "-1.5",
+        y_max: "1.5",
+        max_iter: "100"
+      }
+    },
+    {
+      name: "Multibrot",
+      values: {
+        formula: "z**4 + c",
+        z: "0",
+        x_min: "-1.35",
+        x_max: "1.35",
+        y_min: "-1.35",
+        y_max: "1.35",
+        max_iter: "120"
+      }
+    },
+    {
+      name: "Burning Ship",
+      values: {
+        formula: "((conj(z)) ** 2) + c",
+        z: "0",
+        x_min: "-2.0",
+        x_max: "1.2",
+        y_min: "-1.8",
+        y_max: "1.2",
+        max_iter: "130"
+      }
+    },
+    {
+      name: "Tricorn",
+      values: {
+        formula: "(conj(z) ** 2) + c",
+        z: "0",
+        x_min: "-2",
+        x_max: "1",
+        y_min: "-1.5",
+        y_max: "1.5",
+        max_iter: "120"
+      }
+    },
+    {
+      name: "Julia",
+      values: {
+        formula: "z**2 + C(-0.8, 0.156)",
+        z: "0",
+        x_min: "-1.7",
+        x_max: "1.7",
+        y_min: "-1.35",
+        y_max: "1.35",
+        max_iter: "120",
+        c_fixed: "-0.8 + 0.156i"
+      }
+    }
+  ],
+
+  newton: [
+    {
+      name: "z³ − 1",
+      values: {
+        function: "z**3 - 1",
+        derivative: "3*z**2",
+        x_min: "-2",
+        x_max: "2",
+        y_min: "-2",
+        y_max: "2",
+        max_iter: "40",
+        tolerance: "1e-8"
+      }
+    },
+    {
+      name: "z⁴ − 1",
+      values: {
+        function: "z**4 - 1",
+        derivative: "4*z**3",
+        x_min: "-2",
+        x_max: "2",
+        y_min: "-2",
+        y_max: "2",
+        max_iter: "40",
+        tolerance: "1e-8"
+      }
+    },
+    {
+      name: "z³ − 2z + 2",
+      values: {
+        function: "z**3 - 2*z + 2",
+        derivative: "3*z**2 - 2",
+        x_min: "-2",
+        x_max: "2",
+        y_min: "-2",
+        y_max: "2",
+        max_iter: "50",
+        tolerance: "1e-8"
+      }
+    }
+  ],
+
+  lyapunov: [
+    {
+      name: "AB",
+      values: {
+        sequence: "AB",
+        x_min: "2.5",
+        x_max: "4",
+        y_min: "2.5",
+        y_max: "4",
+        iterations: "800",
+        transient: "100"
+      }
+    },
+    {
+      name: "AABABBA",
+      values: {
+        sequence: "AABABBA",
+        x_min: "2.5",
+        x_max: "4",
+        y_min: "2.5",
+        y_max: "4",
+        iterations: "800",
+        transient: "100"
+      }
+    },
+    {
+      name: "ABBAABABA",
+      values: {
+        sequence: "ABBAABABA",
+        x_min: "2.5",
+        x_max: "4",
+        y_min: "2.5",
+        y_max: "4",
+        iterations: "800",
+        transient: "100"
+      }
+    }
+  ]
+};
+
+const DEFAULTS = {
+  mandelbrot: PRESETS.mandelbrot[0].values,
+  newton: PRESETS.newton[0].values,
+  lyapunov: PRESETS.lyapunov[0].values
+};
+
+function parameterFields() {
+  if (state.family === "mandelbrot") {
+    return [
+      { key: "formula", label: "Formula", full: true },
+      { key: "z", label: "z₀" },
+      { key: "max_iter", label: "Max iterations" },
+      { key: "x_min", label: "x min" },
+      { key: "x_max", label: "x max" },
+      { key: "y_min", label: "y min" },
+      { key: "y_max", label: "y max" }
+    ];
+  }
+
+  if (state.family === "newton") {
+    return [
+      { key: "function", label: "Function", full: true },
+      { key: "derivative", label: "Derivative", full: true },
+      { key: "max_iter", label: "Max iterations" },
+      { key: "tolerance", label: "Tolerance" },
+      { key: "x_min", label: "x min" },
+      { key: "x_max", label: "x max" },
+      { key: "y_min", label: "y min" },
+      { key: "y_max", label: "y max" }
+    ];
+  }
+
+  return [
+    { key: "sequence", label: "Sequence", full: true },
+    { key: "iterations", label: "Iterations" },
+    { key: "transient", label: "Transient" },
+    { key: "x_min", label: "x min" },
+    { key: "x_max", label: "x max" },
+    { key: "y_min", label: "y min" },
+    { key: "y_max", label: "y max" }
+  ];
+}
+
+function renderParameterForm(values = DEFAULTS[state.family]) {
+  const root = document.getElementById("parameters");
+  const grid = document.createElement("div");
+  grid.className = "parameter-bar";
+
+  for (const field of parameterFields()) {
+    const wrap = document.createElement("div");
+    wrap.className = "field" + (field.full ? " expression-field" : " compact-field");
+
+    const label = document.createElement("label");
+    label.textContent = field.label;
+    label.htmlFor = "param-" + field.key;
+
+    const input = document.createElement("input");
+    input.id = "param-" + field.key;
+    input.dataset.key = field.key;
+    input.value = values[field.key] ?? "";
+    input.spellcheck = false;
+    input.autocomplete = "off";
+
+    wrap.append(label, input);
+    grid.appendChild(wrap);
+  }
+
+  root.replaceChildren(grid);
+
+  root.querySelectorAll("input").forEach(input => {
+    input.addEventListener("change", scheduleParameterRender);
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") scheduleParameterRender();
+    });
+  });
+}
+
+function readParams() {
+  const result = {};
+  document.querySelectorAll("#parameters input").forEach(input => {
+    result[input.dataset.key] = input.value;
+  });
+  return result;
+}
+
+function setParams(values) {
+  renderParameterForm(values);
+}
+
+function renderExamples() {
+  const root = document.getElementById("examples");
+  root.replaceChildren();
+
+  for (const preset of PRESETS[state.family]) {
+    const btn = document.createElement("button");
+    btn.textContent = preset.name;
+    btn.addEventListener("click", () => {
+      setParams(preset.values);
+      scheduleParameterRender();
+    });
+    root.appendChild(btn);
+  }
+}
+
+function activateFamily(family) {
+  state.family = family;
+
+  document.querySelectorAll("#familyButtons button").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.family === family);
+  });
+
+  renderParameterForm(DEFAULTS[family]);
+  renderExamples();
+  updateFamilyPill();
+  scheduleParameterRender();
+}
+
+function updateFamilyPill() {
+  const labels = {
+    mandelbrot: "Mandelbrot-like",
+    newton: "Newton-like",
+    lyapunov: "Lyapunov-like"
+  };
+  document.getElementById("familyPill").textContent = labels[state.family];
+}
+
+function updateStageLayout() {
+  const header = document.querySelector("header");
+  const sidebar = document.querySelector(".sidebar");
+  const stage = document.querySelector(".stage");
+
+  // The plot receives exactly the remaining viewport height after the
+  // title bar and the compact two-row UI. The page itself never scrolls.
+  const usedHeight = header.offsetHeight + sidebar.offsetHeight;
+  const availableHeight = Math.max(1, window.innerHeight - usedHeight);
+
+  document.documentElement.style.setProperty(
+    "--stage-height",
+    `${availableHeight}px`
+  );
+
+  return availableHeight;
+}
+
+function updateResolution() {
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const stage = document.querySelector(".stage");
+
+  const stageWidth = Math.max(1, stage.clientWidth - 20);
+  const stageHeight = Math.max(1, stage.clientHeight - 20);
+
+  state.resX = Math.min(Math.max(1, Math.floor(stageWidth * dpr)), 2000);
+  state.resY = Math.min(Math.max(1, Math.floor(stageHeight * dpr)), 2000);
+
+  document.getElementById("resolutionPill").textContent =
+    `${state.resX} × ${state.resY}`;
+}
+
+/* ============================================================
+   Render pipeline
+   ============================================================ */
+
+function toNumber(s, fallback) {
+  const n = Number(s);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function parseRealOrComplexLiteral(text) {
+  const s = String(text).trim().replace(/\s+/g, "");
+  if (s.endsWith("i")) {
+    const body = s.slice(0, -1);
+    const m = body.match(/^([+-]?(?:\d+(?:\.\d*)?|\.\d+)?)([+-](?:\d+(?:\.\d*)?|\.\d+)?)$/);
+    if (m) {
+      return complex(Number(m[1] || 0), Number(m[2]));
+    }
+    if (body === "" || body === "+") return complex(0, 1);
+    if (body === "-") return complex(0, -1);
+    const imag = Number(body);
+    if (Number.isFinite(imag)) return complex(0, imag);
+  }
+  const n = Number(s);
+  if (Number.isFinite(n)) return complex(n, 0);
+  throw new Error(`Invalid complex value: ${text}`);
+}
+
+function makeMandelbrotFunction(formula) {
+  const fn = compileComplexExpression(formula, ["z", "c"]);
+  const out = (z, c) => asComplex(fn(z, c));
+
+  const normalized = String(formula)
+    .replace(/\s+/g, "")
+    .replace(/\^/g, "**")
+    .toLowerCase();
+
+  if (normalized === "z**2+c") {
+    attachMandelbrotKernel(out, "z2+c");
+  } else if (normalized === "z**4+c") {
+    attachMandelbrotKernel(out, "z4+c");
+  } else if (
+    normalized === "conj(z)**2+c" ||
+    normalized === "conj(z)^2+c"
+  ) {
+    attachMandelbrotKernel(out, "conjz2+c");
+  }
+
+  return out;
+}
+
+function makeNewtonFunction(formula) {
+  const fn = compileComplexExpression(formula, ["z"]);
+  return z => asComplex(fn(z));
+}
+
+async function renderFractal() {
+  // A parameter render always creates a new map. Visualization changes
+  // deliberately do not come through this function.
+  const myToken = ++state.renderToken;
+  state.rendering = true;
+  const status = document.getElementById("statusText");
+  const bar = document.getElementById("progressBar");
+  status.textContent = "Rendering…";
+  bar.style.width = "3%";
+
+  try {
+    updateStageLayout();
+    updateResolution();
+    const p = readParams();
+
+    const x = linspace(
+      toNumber(p.x_min, -2),
+      toNumber(p.x_max, 2),
+      state.resX
+    );
+
+    const y = linspace(
+      toNumber(p.y_min, -2),
+      toNumber(p.y_max, 2),
+      state.resY
+    );
+
+    const x_space = makeXSpace(x, y);
+    let fractal_map;
+
+    if (state.family === "mandelbrot") {
+      const formula = p.formula || "z**2 + c";
+      const functionFn = makeMandelbrotFunction(formula);
+      const z0 = parseRealOrComplexLiteral(p.z || "0");
+      const max_iter = Math.max(1, Math.floor(toNumber(p.max_iter, 100)));
+
+      fractal_map = fractal_mandelbrot(
+        functionFn,
+        x_space,
+        z0,
+        state.resX,
+        max_iter,
+        false
+      );
+    } else if (state.family === "newton") {
+      const fSource = p.function || "z**3 - 1";
+      const dfSource = p.derivative || "3*z**2";
+      const f = makeNewtonFunction(fSource);
+      const df = makeNewtonFunction(dfSource);
+
+      const fNorm = fSource.replace(/\s+/g, "").replace(/\^/g, "**");
+      const dfNorm = dfSource.replace(/\s+/g, "").replace(/\^/g, "**");
+      if (fNorm === "z**3-1" && dfNorm === "3*z**2") {
+        attachNewtonKernel(f, df, "z3-1");
+      }
+
+      const max_iter = Math.max(1, Math.floor(toNumber(p.max_iter, 40)));
+      const tolerance = Math.max(0, toNumber(p.tolerance, 1e-8));
+
+      fractal_map = fractal_newton(
+        f,
+        x_space,
+        df,
+        state.resX,
+        max_iter,
+        tolerance,
+        false
+      );
+    } else {
+      const sequence = (p.sequence || "AB").toUpperCase().replace(/[^AB]/g, "");
+      const iterations = Math.max(1, Math.floor(toNumber(p.iterations, 800)));
+      const transient = Math.max(0, Math.floor(toNumber(p.transient, 100)));
+
+      fractal_map = fractal_lyapunov(
+        sequence || "AB",
+        x_space,
+        state.resX,
+        iterations,
+        transient,
+        false
+      );
+    }
+
+    if (myToken !== state.renderToken) return;
+
+    state.cachedMap = fractal_map;
+    state.cachedXSpace = x_space;
+    state.lastXSpace = x_space;
+
+    bar.style.width = "92%";
+    repaintCachedMap();
+
+    bar.style.width = "100%";
+    status.textContent = `Rendered ${state.resX} × ${state.resY}`;
+  } catch (error) {
+    console.error(error);
+    status.textContent = "Error: " + error.message;
+    bar.style.width = "0%";
+  } finally {
+    if (myToken === state.renderToken) {
+      state.rendering = false;
+      setTimeout(() => {
+        if (!state.rendering && myToken === state.renderToken) {
+          bar.style.width = "0%";
+        }
+      }, 400);
+    }
+  }
+}
+
+function repaintCachedMap() {
+  if (!state.cachedMap || !state.cachedXSpace) return;
+
+  plot_fractal_map(
+    state.cachedMap,
+    state.cachedXSpace,
+    document.getElementById("colormap").value,
+    document.getElementById("showAxis").checked
+  );
+}
+
+let renderTimer = null;
+
+function scheduleParameterRender() {
+  clearTimeout(renderTimer);
+  renderTimer = setTimeout(renderFractal, 30);
+}
+
+/* ============================================================
+   Init
+   ============================================================ */
+
+document.querySelectorAll("#familyButtons button").forEach(btn => {
+  btn.addEventListener("click", () => activateFamily(btn.dataset.family));
+});
+
+document.getElementById("showAxis").addEventListener("change", repaintCachedMap);
+document.getElementById("colormap").addEventListener("change", repaintCachedMap);
+
+window.addEventListener("resize", () => {
+  updateStageLayout();
+  updateResolution();
+  // Never recalculate the fractal on resize.
+});
+
+const canvas = document.getElementById("canvas");
+canvas.addEventListener("mousemove", e => {
+  if (!state.lastXSpace) return;
+  const rect = canvas.getBoundingClientRect();
+  const u = (e.clientX - rect.left) / rect.width;
+  const v = (e.clientY - rect.top) / rect.height;
+  const xs = state.lastXSpace;
+  const re = xs.xMin + u * (xs.xMax - xs.xMin);
+  const im = xs.yMax - v * (xs.yMax - xs.yMin);
+  document.getElementById("coordsText").textContent =
+    `Re ${re.toFixed(5)}  Im ${im.toFixed(5)}`;
+});
+
+updateStageLayout();
+activateFamily("mandelbrot");
+
+// Preserve the last x_space for coordinate display by wrapping plot call state.
+const _plot = plot_fractal_map;
+plot_fractal_map = function(fractal_map, x_space = null, cmap = "magma", show_axis = false) {
+  state.lastXSpace = x_space;
+  return _plot(fractal_map, x_space, cmap, show_axis);
+};
+</script>
+</body>
+</html>
