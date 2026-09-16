@@ -2816,7 +2816,7 @@ function drawExportWatermark(
   ctx.fillText(
     "digyt.github.io/fractal_explorer",
     width - pad,
-    pad + Math.round(13 * scaleY)
+    height - pad - Math.round(13 * scaleY)
   );
 
   ctx.restore();
