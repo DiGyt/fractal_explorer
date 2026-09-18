@@ -694,6 +694,14 @@
                   <option value="gray">gray</option>
                 </select>
               </div>
+
+              <div class="field">
+                <label for="resolutionMode">Resolution</label>
+                <select id="resolutionMode">
+                  <option value="window" selected>Window size</option>
+                  <option value="screen">Screen size</option>
+                </select>
+              </div>
             </div>
           </section>
 
@@ -2262,6 +2270,7 @@ const state = {
   family: "mandelbrot",
   resX: 1000,
   resY: 1000,
+  resolutionMode: "window",
   rendering: false,
   renderToken: 0,
   cachedMap: null,
@@ -2949,48 +2958,17 @@ function updateResolution() {
       window.devicePixelRatio || 1
     );
 
-  // Treat a browser window that fills the physical screen as fullscreen too.
-  // This covers maximized browser windows (browser chrome still visible), not
-  // only the page-level Fullscreen API. Otherwise keep the existing
-  // browser-window/viewport sizing behavior.
-  const screenWidth =
-    Number(window.screen && window.screen.width) || 0;
-  const screenHeight =
-    Number(window.screen && window.screen.height) || 0;
-  const outerWidth =
-    Number(window.outerWidth) || 0;
-  const outerHeight =
-    Number(window.outerHeight) || 0;
+  let cssWidth, cssHeight;
 
-  const availableWidth =
-    Number(window.screen && window.screen.availWidth) || screenWidth;
-  const availableHeight =
-    Number(window.screen && window.screen.availHeight) || screenHeight;
-  const tolerance = 40;
-
-  // A maximized browser window normally has outer dimensions that match the
-  // OS-available screen area (or the full screen, depending on the platform).
-  // The tolerance absorbs window borders/title-bar rounding differences.
-  const browserWindowFillsScreen =
-    screenWidth > 0 &&
-    screenHeight > 0 &&
-    (
-      (Math.abs(outerWidth - availableWidth) <= tolerance &&
-       Math.abs(outerHeight - availableHeight) <= tolerance) ||
-      (Math.abs(outerWidth - screenWidth) <= tolerance &&
-       Math.abs(outerHeight - screenHeight) <= tolerance)
-    );
-
-  const isFullscreen =
-    Boolean(document.fullscreenElement) ||
-    browserWindowFillsScreen;
-
-  const cssWidth = isFullscreen
-    ? screenWidth
-    : window.innerWidth;
-  const cssHeight = isFullscreen
-    ? screenHeight
-    : window.innerHeight;
+  if (state.resolutionMode === "screen") {
+    // Use device screen size
+    cssWidth = Number(window.screen && window.screen.width) || window.innerWidth;
+    cssHeight = Number(window.screen && window.screen.height) || window.innerHeight;
+  } else {
+    // Use window/viewport size (default)
+    cssWidth = window.innerWidth;
+    cssHeight = window.innerHeight;
+  }
 
   state.resX =
     Math.max(
@@ -3312,8 +3290,8 @@ const canvas =
    Fractal camera interaction
    ============================================================ */
 
-const ZOOM_MIN = 0.15;
-const ZOOM_MAX = 32;
+const ZOOM_MIN = 0.01;
+const ZOOM_MAX = 128;
 const ZOOM_RENDER_DEBOUNCE = 140;
 
 function getStageRect() {
@@ -3457,8 +3435,21 @@ function commitFractalZoom() {
   let yMin = Math.min(topLeft.im, bottomRight.im);
   let yMax = Math.max(topLeft.im, bottomRight.im);
 
+  // Check for valid region
   if (!(xMax > xMin) || !(yMax > yMin)) {
     resetFractalZoomTransform();
+    return;
+  }
+
+  // Check for numerical precision issues: if the region is extremely small,
+  // it indicates we've zoomed to the limit of floating-point precision.
+  // Don't commit in this case, just reset the temporary zoom transform.
+  const xRange = xMax - xMin;
+  const yRange = yMax - yMin;
+  if (xRange < 1e-15 || yRange < 1e-15) {
+    // Precision limit reached, but keep the render pending flag to show we tried
+    resetFractalZoomTransform();
+    state.zoom.renderPending = true;
     return;
   }
 
@@ -3736,6 +3727,19 @@ document
   .addEventListener(
     "change",
     repaintCachedMap
+  );
+
+document
+  .getElementById(
+    "resolutionMode"
+  )
+  .addEventListener(
+    "change",
+    (e) => {
+      state.resolutionMode = e.target.value;
+      updateResolution();
+      scheduleParameterRender();
+    }
   );
 
 document
