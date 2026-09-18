@@ -432,6 +432,9 @@
     display: block;
     width: auto;
     height: auto;
+    touch-action: none;
+    transform-origin: center center;
+    will-change: transform;
     max-width: none;
     max-height: none;
     image-rendering: auto;
@@ -2263,6 +2266,17 @@ const state = {
   renderToken: 0,
   cachedMap: null,
   cachedXSpace: null,
+  zoom: {
+    active: false,
+    scale: 1,
+    tx: 0,
+    ty: 0,
+    baseRect: null,
+    pointers: new Map(),
+    pinch: null,
+    commitTimer: null,
+    renderPending: false
+  },
 };
 
 const PRESETS = {
@@ -3176,6 +3190,7 @@ function renderFractal() {
       }
 
       if (message.type === "error") {
+        resetFractalZoomTransform();
         console.error(message.message);
         status.textContent = "Error: " + message.message;
         bar.style.width = "0%";
@@ -3201,6 +3216,7 @@ function renderFractal() {
       state.lastXSpace = state.cachedXSpace;
 
       bar.style.width = "92%";
+      resetFractalZoomTransform();
       repaintCachedMap();
       bar.style.width = "100%";
       status.textContent = `Rendered ${state.resX} × ${state.resY}`;
@@ -3218,6 +3234,7 @@ function renderFractal() {
 
     worker.onerror = error => {
       if (myToken !== state.renderToken || worker !== fractalWorker) return;
+      resetFractalZoomTransform();
       console.error(error);
       status.textContent = "Error: " + (error.message || "Worker error");
       bar.style.width = "0%";
@@ -3233,6 +3250,7 @@ function renderFractal() {
       params: p
     });
   } catch (error) {
+    resetFractalZoomTransform();
     console.error(error);
     status.textContent = "Error: " + error.message;
     bar.style.width = "0%";
@@ -3267,6 +3285,12 @@ function repaintCachedMap() {
 function scheduleParameterRender() {
   clearTimeout(renderTimer);
 
+  // A normal parameter change is not a live camera interaction. Snap any
+  // transient bitmap transform back before starting the new calculation.
+  if (!state.zoom.renderPending) {
+    resetFractalZoomTransform();
+  }
+
   // Stop an in-flight calculation immediately. The existing 30 ms debounce
   // is kept unchanged before starting the replacement calculation.
   if (fractalWorker) {
@@ -3278,6 +3302,405 @@ function scheduleParameterRender() {
 
   renderTimer = setTimeout(renderFractal, 30);
 }
+
+const canvas =
+  document.getElementById(
+    "canvas"
+  );
+
+/* ============================================================
+   Fractal camera interaction
+   ============================================================ */
+
+const ZOOM_MIN = 0.15;
+const ZOOM_MAX = 32;
+const ZOOM_RENDER_DEBOUNCE = 140;
+
+function getStageRect() {
+  const stage = document.querySelector(".stage");
+  return stage ? stage.getBoundingClientRect() : null;
+}
+
+function applyFractalZoomTransform() {
+  canvas.style.transform =
+    `translate(${state.zoom.tx}px, ${state.zoom.ty}px) scale(${state.zoom.scale})`;
+}
+
+function resetFractalZoomTransform() {
+  const zoom = state.zoom;
+  zoom.active = false;
+  zoom.scale = 1;
+  zoom.tx = 0;
+  zoom.ty = 0;
+  zoom.baseRect = null;
+  zoom.pointers.clear();
+  zoom.pinch = null;
+  zoom.renderPending = false;
+  clearTimeout(zoom.commitTimer);
+  zoom.commitTimer = null;
+
+  if (canvas) {
+    canvas.style.transform = "translate(0px, 0px) scale(1)";
+  }
+}
+
+function cancelActiveFractalRenderForInteraction() {
+  clearTimeout(renderTimer);
+  renderTimer = null;
+
+  if (fractalWorker) {
+    fractalWorker.terminate();
+    fractalWorker = null;
+    state.renderToken++;
+    state.rendering = false;
+  }
+}
+
+function beginFractalInteraction() {
+  if (!state.lastXSpace || !canvas.width || !canvas.height) {
+    return false;
+  }
+
+  cancelActiveFractalRenderForInteraction();
+
+  const zoom = state.zoom;
+  const rect = canvas.getBoundingClientRect();
+  zoom.active = true;
+  zoom.scale = 1;
+  zoom.tx = 0;
+  zoom.ty = 0;
+  zoom.baseRect = {
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height,
+    centerX: rect.left + rect.width / 2,
+    centerY: rect.top + rect.height / 2
+  };
+  zoom.renderPending = false;
+
+  applyFractalZoomTransform();
+  return true;
+}
+
+function setTransformForZoom(anchorX, anchorY, newScale) {
+  const zoom = state.zoom;
+  const base = zoom.baseRect;
+  if (!base) return;
+
+  const oldScale = zoom.scale;
+  const k = newScale / oldScale;
+  const anchorRelX = anchorX - base.centerX;
+  const anchorRelY = anchorY - base.centerY;
+
+  zoom.tx = anchorRelX - (anchorRelX - zoom.tx) * k;
+  zoom.ty = anchorRelY - (anchorRelY - zoom.ty) * k;
+  zoom.scale = newScale;
+
+  applyFractalZoomTransform();
+}
+
+function zoomAtScreenPoint(clientX, clientY, factor) {
+  if (!state.zoom.active) {
+    if (!beginFractalInteraction()) return;
+  }
+
+  const newScale = Math.max(
+    ZOOM_MIN,
+    Math.min(ZOOM_MAX, state.zoom.scale * factor)
+  );
+
+  setTransformForZoom(clientX, clientY, newScale);
+}
+
+function worldAtScreenPoint(clientX, clientY) {
+  const zoom = state.zoom;
+  const base = zoom.baseRect;
+  const xs = state.lastXSpace;
+  if (!base || !xs || !zoom.scale) return null;
+
+  // Undo the temporary screen-space transform to get the corresponding
+  // coordinate in the original rendered bitmap.
+  const xInBase =
+    (clientX - base.centerX - zoom.tx) / zoom.scale +
+    base.width / 2;
+  const yInBase =
+    (clientY - base.centerY - zoom.ty) / zoom.scale +
+    base.height / 2;
+
+  const u = xInBase / base.width;
+  const v = yInBase / base.height;
+
+  return {
+    re: xs.xMin + u * (xs.xMax - xs.xMin),
+    im: xs.yMax - v * (xs.yMax - xs.yMin)
+  };
+}
+
+function commitFractalZoom() {
+  clearTimeout(state.zoom.commitTimer);
+  state.zoom.commitTimer = null;
+
+  if (!state.zoom.active || !state.lastXSpace) return;
+
+  const stage = getStageRect();
+  const topLeft = stage && worldAtScreenPoint(stage.left, stage.top);
+  const bottomRight = stage && worldAtScreenPoint(stage.right, stage.bottom);
+
+  if (!topLeft || !bottomRight) {
+    resetFractalZoomTransform();
+    return;
+  }
+
+  let xMin = Math.min(topLeft.re, bottomRight.re);
+  let xMax = Math.max(topLeft.re, bottomRight.re);
+  let yMin = Math.min(topLeft.im, bottomRight.im);
+  let yMax = Math.max(topLeft.im, bottomRight.im);
+
+  if (!(xMax > xMin) || !(yMax > yMin)) {
+    resetFractalZoomTransform();
+    return;
+  }
+
+  const values = readParams();
+  values.x_min = formatCameraValue(xMin);
+  values.x_max = formatCameraValue(xMax);
+  values.y_min = formatCameraValue(yMin);
+  values.y_max = formatCameraValue(yMax);
+
+  setParams(values);
+
+  state.zoom.renderPending = true;
+  state.zoom.active = false;
+  state.zoom.pointers.clear();
+  state.zoom.pinch = null;
+
+  scheduleParameterRender();
+}
+
+function scheduleFractalZoomCommit() {
+  clearTimeout(state.zoom.commitTimer);
+  state.zoom.commitTimer = setTimeout(
+    commitFractalZoom,
+    ZOOM_RENDER_DEBOUNCE
+  );
+}
+
+function formatCameraValue(value) {
+  if (!Number.isFinite(value)) return "0";
+
+  // Keep enough precision for repeated zooming while keeping the parameter
+  // fields readable on small screens.
+  const rounded = Number(value.toPrecision(15));
+  return String(rounded);
+}
+
+function updatePinchTransform() {
+  const zoom = state.zoom;
+  if (!zoom.pinch || zoom.pointers.size < 2) return;
+
+  const points = [...zoom.pointers.values()];
+  const a = points[0];
+  const b = points[1];
+  const midX = (a.x + b.x) / 2;
+  const midY = (a.y + b.y) / 2;
+  const distance = Math.hypot(a.x - b.x, a.y - b.y);
+
+  if (!Number.isFinite(distance) || distance < 1) return;
+
+  const newScale = Math.max(
+    ZOOM_MIN,
+    Math.min(
+      ZOOM_MAX,
+      zoom.pinch.startScale *
+        (distance / zoom.pinch.startDistance)
+    )
+  );
+
+  const k = newScale / zoom.pinch.startScale;
+  zoom.scale = newScale;
+  zoom.tx =
+    (midX - zoom.baseRect.centerX) -
+    (zoom.pinch.startMidX - zoom.baseRect.centerX - zoom.pinch.startTx) * k;
+  zoom.ty =
+    (midY - zoom.baseRect.centerY) -
+    (zoom.pinch.startMidY - zoom.baseRect.centerY - zoom.pinch.startTy) * k;
+
+  applyFractalZoomTransform();
+}
+
+function startPinchIfReady() {
+  const zoom = state.zoom;
+  if (!zoom.active || zoom.pointers.size !== 2 || !zoom.baseRect) return;
+
+  const points = [...zoom.pointers.values()];
+  const a = points[0];
+  const b = points[1];
+  const midX = (a.x + b.x) / 2;
+  const midY = (a.y + b.y) / 2;
+  const distance = Math.hypot(a.x - b.x, a.y - b.y);
+
+  if (!Number.isFinite(distance) || distance < 1) return;
+
+  zoom.pinch = {
+    startDistance: distance,
+    startMidX: midX,
+    startMidY: midY,
+    startScale: zoom.scale,
+    startTx: zoom.tx,
+    startTy: zoom.ty
+  };
+}
+
+function panByScreenDelta(deltaX, deltaY) {
+  const zoom = state.zoom;
+  if (!zoom.active || !zoom.baseRect) return;
+
+  zoom.tx += deltaX;
+  zoom.ty += deltaY;
+  applyFractalZoomTransform();
+}
+
+function onFractalPointerDown(e) {
+  if (!state.lastXSpace) return;
+
+  e.preventDefault();
+
+  if (!state.zoom.active) {
+    if (!beginFractalInteraction()) return;
+  }
+
+  canvas.setPointerCapture(e.pointerId);
+  state.zoom.pointers.set(e.pointerId, {
+    x: e.clientX,
+    y: e.clientY
+  });
+
+  // If this is the second touch, start pinch
+  if (state.zoom.pointers.size === 2) {
+    startPinchIfReady();
+  }
+}
+
+function onFractalPointerMove(e) {
+  if (!state.zoom.pointers.has(e.pointerId)) return;
+
+  e.preventDefault();
+
+  const oldPos = state.zoom.pointers.get(e.pointerId);
+  state.zoom.pointers.set(e.pointerId, {
+    x: e.clientX,
+    y: e.clientY
+  });
+
+  // Multi-touch: pinch zoom
+  if (state.zoom.pointers.size >= 2) {
+    if (!state.zoom.pinch) startPinchIfReady();
+    updatePinchTransform();
+  } 
+  // Single touch/pointer: pan
+  else {
+    const deltaX = e.clientX - oldPos.x;
+    const deltaY = e.clientY - oldPos.y;
+    panByScreenDelta(deltaX, deltaY);
+  }
+}
+
+function onFractalPointerEnd(e) {
+  e.preventDefault();
+  state.zoom.pointers.delete(e.pointerId);
+
+  if (canvas.hasPointerCapture(e.pointerId)) {
+    canvas.releasePointerCapture(e.pointerId);
+  }
+
+  if (state.zoom.pointers.size < 2) {
+    state.zoom.pinch = null;
+  }
+
+  if (state.zoom.pointers.size === 0 && state.zoom.active) {
+    scheduleFractalZoomCommit();
+  }
+}
+
+canvas.addEventListener("pointerdown", onFractalPointerDown);
+canvas.addEventListener("pointermove", onFractalPointerMove);
+canvas.addEventListener("pointerup", onFractalPointerEnd);
+canvas.addEventListener("pointercancel", onFractalPointerEnd);
+
+// Additional mouse drag handling for non-touch pointers
+canvas.addEventListener("mousedown", e => {
+  if (!state.lastXSpace) return;
+  
+  e.preventDefault();
+  
+  if (!state.zoom.active) {
+    if (!beginFractalInteraction()) return;
+  }
+  
+  canvas.setPointerCapture(e.pointerId);
+  state.zoom.pointers.set(e.pointerId, {
+    x: e.clientX,
+    y: e.clientY
+  });
+});
+
+canvas.addEventListener("mousemove", e => {
+  if (!state.zoom.pointers.has(e.pointerId)) return;
+  
+  e.preventDefault();
+  
+  const oldPos = state.zoom.pointers.get(e.pointerId);
+  state.zoom.pointers.set(e.pointerId, {
+    x: e.clientX,
+    y: e.clientY
+  });
+  
+  const deltaX = e.clientX - oldPos.x;
+  const deltaY = e.clientY - oldPos.y;
+  panByScreenDelta(deltaX, deltaY);
+});
+
+canvas.addEventListener("mouseup", e => {
+  e.preventDefault();
+  state.zoom.pointers.delete(e.pointerId);
+  
+  if (canvas.hasPointerCapture(e.pointerId)) {
+    canvas.releasePointerCapture(e.pointerId);
+  }
+  
+  if (state.zoom.pointers.size === 0 && state.zoom.active) {
+    scheduleFractalZoomCommit();
+  }
+});
+
+canvas.addEventListener(
+  "wheel",
+  e => {
+    // Wheel zoom is deliberately scoped to the fractal itself so the page
+    // never becomes the zoom target.
+    if (!state.lastXSpace) return;
+
+    e.preventDefault();
+
+    if (!state.zoom.active) {
+      if (!beginFractalInteraction()) return;
+    }
+
+    const factor = Math.exp(-e.deltaY * 0.0025);
+    zoomAtScreenPoint(e.clientX, e.clientY, factor);
+    scheduleFractalZoomCommit();
+  },
+  { passive: false }
+);
+
+window.addEventListener("blur", () => {
+  if (state.zoom.active && state.zoom.pointers.size) {
+    state.zoom.pointers.clear();
+    state.zoom.pinch = null;
+    scheduleFractalZoomCommit();
+  }
+});
 
 /* ============================================================
    Init
@@ -3344,11 +3767,6 @@ window.addEventListener(
     scheduleParameterRender();
   }
 );
-
-const canvas =
-  document.getElementById(
-    "canvas"
-  );
 
 const updatePointerCoords = e => {
   if (!state.lastXSpace) {
